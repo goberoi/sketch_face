@@ -25,7 +25,6 @@ while True:
         face_locations = face_recognition.face_locations(rgb_small_frame)
 
     frame_count = (frame_count + 1) % process_nth_frame
-    print(frame_count)
 
     # Display the results
     for (top, right, bottom, left) in face_locations:
