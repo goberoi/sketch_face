@@ -61,17 +61,18 @@ while(True):
                random.choice(images['mouth']))
 
     # Draw left eye
+    eye = random.choice(images['eye'])
     draw_image(canvas, 
                width * 0.33, 
                height * 0.33, 
-               random.choice(images['eye']),
+               eye,
                0.5)
 
     # Draw right eye
     draw_image(canvas, 
                width * 0.67, 
                height * 0.33, 
-               random.choice(images['eye']),
+               eye,
                0.5)
 
     # Draw nose

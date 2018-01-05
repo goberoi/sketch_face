@@ -33,6 +33,7 @@ while True:
     # Pick the background to draw on
     if blank_canvas:
         canvas = np.zeros((height,width,3), np.uint8)
+        canvas[:, :, :] = (255, 255, 255)
     else:
         canvas = frame.copy()
 
@@ -58,7 +59,7 @@ while True:
         for landmark, points in face.items():
             np_points = np.array(points, dtype='int32')
             np_points *= scale_frame
-            cv2.polylines(canvas, [np_points], False, (0,255,255), 1)
+            cv2.polylines(canvas, [np_points], False, (156,156,156), 3)
 
     # Display the resulting image
     cv2.imshow('Video', canvas)
