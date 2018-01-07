@@ -7,7 +7,7 @@ import numpy as np
 process_nth_frame = 2
 scale_frame = 3
 blank_canvas = True
-logging = False
+logging = True
 
 # Get a reference to webcam #0 (the default one)
 video_capture = cv2.VideoCapture(0)
@@ -59,7 +59,15 @@ while True:
         for landmark, points in face.items():
             np_points = np.array(points, dtype='int32')
             np_points *= scale_frame
-            cv2.polylines(canvas, [np_points], False, (156,156,156), 3)
+
+            color = (156,156,156)
+            close_polygon = False
+            if landmark in ['left_eye', 'right_eye']:
+                centroid = np.mean(np_points, axis=0).astype('int')
+                cv2.circle(canvas, tuple(centroid), 5, color, 7)
+                close_polygon = True
+
+            cv2.polylines(canvas, [np_points], close_polygon, color, 3)
 
     # Display the resulting image
     cv2.imshow('Video', canvas)
