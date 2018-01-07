@@ -1,4 +1,5 @@
 *~
 .DS_Store
 *.mp4
+__pycache__
 

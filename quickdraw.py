@@ -21,7 +21,7 @@ def load_images(filename):
             images.append(image)
     return images
 
-def draw_image(canvas, x, y, image, scale=1):
+def render(canvas, x, y, image, scale=1):
     if debug:
         cv2.circle(canvas, (int(x), int(y)), 2, (0,0,255))
         cv2.rectangle(canvas, (int(x - image_width/2), int(y - image_height/2)), (int(x + image_width/2), int(y + image_height/2)), (0,0,255), 1)
@@ -32,7 +32,6 @@ def draw_image(canvas, x, y, image, scale=1):
         points = (points * scale).astype(int)
         points += [int(x - image_width * scale / 2), int(y - image_height * scale / 2)]
         cv2.polylines(canvas, [points], False, (156, 156, 156), 2)
-
 
 # Initialize variables
 pp = pprint.PrettyPrinter(indent=4)
@@ -47,46 +46,48 @@ images['mouth'] = load_images('mouth.ndjson')
 images['eye'] = load_images('eye.ndjson')
 images['nose'] = load_images('nose.ndjson')
 
-# Create blank canvas
-canvas = np.zeros((height,width,3), np.uint8)
 
-while(True):
-    # Clear canvas
-    canvas[:, :, :] = (255, 255, 255)
+if __name__ == "__main__":
+    # Create blank canvas
+    canvas = np.zeros((height,width,3), np.uint8)
 
-    # Draw mouth
-    draw_image(canvas, 
-               width * 0.5, 
-               height * 0.67, 
-               random.choice(images['mouth']))
+    while(True):
+        # Clear canvas
+        canvas[:, :, :] = (255, 255, 255)
 
-    # Draw left eye
-    eye = random.choice(images['eye'])
-    draw_image(canvas, 
-               width * 0.33, 
-               height * 0.33, 
-               eye,
-               0.5)
+        # Draw mouth
+        render(canvas, 
+                   width * 0.5, 
+                   height * 0.67, 
+                   random.choice(images['mouth']))
 
-    # Draw right eye
-    draw_image(canvas, 
-               width * 0.67, 
-               height * 0.33, 
-               eye,
-               0.5)
+        # Draw left eye
+        eye = random.choice(images['eye'])
+        render(canvas, 
+                   width * 0.33, 
+                   height * 0.33, 
+                   eye,
+                   0.5)
 
-    # Draw nose
-    draw_image(canvas, 
-               width * 0.5, 
-               height * 0.43, 
-               random.choice(images['nose']),
-               0.6)
+        # Draw right eye
+        render(canvas, 
+                   width * 0.67, 
+                   height * 0.33, 
+                   eye,
+                   0.5)
 
-    # Show image and wait for key
-    cv2.imshow('Picture', canvas)
+        # Draw nose
+        render(canvas, 
+                   width * 0.5, 
+                   height * 0.43, 
+                   random.choice(images['nose']),
+                   0.6)
 
-    # Hit 'q' on the keyboard to quit!
-    if cv2.waitKey(500) & 0xFF == ord('q'):
-        break
+        # Show image and wait for key
+        cv2.imshow('Picture', canvas)
 
-cv2.destroyAllWindows()
+        # Hit 'q' on the keyboard to quit!
+        if cv2.waitKey(500) & 0xFF == ord('q'):
+            break
+
+    cv2.destroyAllWindows()

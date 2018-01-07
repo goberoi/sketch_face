@@ -2,6 +2,8 @@ import face_recognition
 import cv2
 import pprint
 import numpy as np
+import quickdraw
+import random
 
 # Settings
 process_nth_frame = 2
@@ -17,6 +19,7 @@ face_landmarks_list = []
 frame_count = 0
 pp = pprint.PrettyPrinter(indent=4)
 canvas = None
+eye = random.choice(quickdraw.images['eye'])
 
 # Helper
 def log(msg):
@@ -44,12 +47,16 @@ while True:
     rgb_frame = frame[:, :, ::-1]
 
     # Only process every other frame of video to save time
-    if (frame_count == 0):
+    if (frame_count % process_nth_frame) == 0:
         # Find all the faces and face encodings in the current frame of video
         face_landmarks = face_recognition.face_landmarks(rgb_frame)
 
+    # Generate random features every so often
+    if (frame_count % 10) == 0:
+        eye = random.choice(quickdraw.images['eye'])
+
     # Increment counter to track nth frame to process
-    frame_count = (frame_count + 1) % process_nth_frame
+    frame_count = (frame_count + 1) % 10000000
 
     log(face_landmarks)
 
@@ -62,12 +69,14 @@ while True:
 
             color = (156,156,156)
             close_polygon = False
-            if landmark in ['left_eye', 'right_eye']:
-                centroid = np.mean(np_points, axis=0).astype('int')
-                cv2.circle(canvas, tuple(centroid), 5, color, 7)
-                close_polygon = True
 
-            cv2.polylines(canvas, [np_points], close_polygon, color, 3)
+            if landmark in ['left_eye', 'right_eye']:
+                close_polygon = True
+                centroid = np.mean(np_points, axis=0).astype('int')
+#                cv2.circle(canvas, tuple(centroid), 5, color, 7)
+                quickdraw.render(canvas, centroid[0], centroid[1], eye, 0.2)
+            else:
+                cv2.polylines(canvas, [np_points], close_polygon, color, 3)
 
     # Display the resulting image
     cv2.imshow('Video', canvas)
