@@ -66,6 +66,9 @@ while True:
     # Generate random features every so often
     if ((frame_count % 10) == 0) or (not sketch_images):
         sketch_images = { name : random.choice(quickdraw.images[name]) for name in ['eye', 'mouth', 'nose']}
+        sketch_images['nose_bridge'] = sketch_images['nose']
+        sketch_images['left_eye'] = sketch_images['eye']
+        sketch_images['right_eye'] = sketch_images['eye']
 
     # Increment counter to track nth frame to process
     frame_count = (frame_count + 1) % 10000000
@@ -82,14 +85,19 @@ while True:
             color = (156,156,156)
             close_polygon = False
 
-            if landmark in ['left_eye', 'right_eye']:
+            if landmark in ['left_eye', 'right_eye', 'nose_bridge']:
                 close_polygon = True
                 centroid = np.mean(np_points, axis=0).astype('int')
-                cv2.circle(canvas, tuple(centroid), 5, color, 7)
+                sketch_image_scale = 0.2
+                if landmark in ['nose_bridge']:
+                    sketch_image_scale = 0.5
+#                cv2.circle(canvas, tuple(centroid), 5, color, 7)
                 if settings['sketch']:
-                    quickdraw.render(canvas, centroid[0], centroid[1], sketch_images['eye'], 0.2)
+                    quickdraw.render(canvas, centroid[0], centroid[1], sketch_images[landmark], 0.2)
                 else:
                     cv2.polylines(canvas, [np_points], close_polygon, color, 3)
+            elif landmark in ['nose_tip']:
+                pass
             else:
                 cv2.polylines(canvas, [np_points], close_polygon, color, 3)
 
