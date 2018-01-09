@@ -7,9 +7,10 @@ import random
 
 # Settings
 process_nth_frame = 2
-scale_frame = 3
+scale_frame = 4
 blank_canvas = True
 logging = True
+cartoon = True
 
 # Get a reference to webcam #0 (the default one)
 video_capture = cv2.VideoCapture(0)
@@ -73,8 +74,11 @@ while True:
             if landmark in ['left_eye', 'right_eye']:
                 close_polygon = True
                 centroid = np.mean(np_points, axis=0).astype('int')
-#                cv2.circle(canvas, tuple(centroid), 5, color, 7)
-                quickdraw.render(canvas, centroid[0], centroid[1], eye, 0.2)
+                cv2.circle(canvas, tuple(centroid), 5, color, 7)
+                if cartoon:
+                    quickdraw.render(canvas, centroid[0], centroid[1], eye, 0.2)
+                else:
+                    cv2.polylines(canvas, [np_points], close_polygon, color, 3)
             else:
                 cv2.polylines(canvas, [np_points], close_polygon, color, 3)
 
