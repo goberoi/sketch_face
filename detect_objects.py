@@ -3,6 +3,7 @@ import os
 import cv2
 import numpy as np
 import time
+import utils from FPS, WebcamVideoStream
 
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
@@ -81,13 +82,16 @@ def detect_and_visualize(image):
 # Main function to demo/test when this is not used as a module.
 if __name__ == "__main__":
     # Get a reference to webcam #0 (the default one)
-    video_capture = cv2.VideoCapture(0)
+    video_capture = WebVideoStream(src=0).start()
 
     # Setup detector
     init()
     
     # Used to process every other frame
     process_frame = True
+
+    # Track fps
+    fps = FPS.start()
 
     while(True):
         # Grab a single frame of video
@@ -98,7 +102,14 @@ if __name__ == "__main__":
             detect_and_visualize(frame)
         process_frame = (not process_frame)
 
-        # Show in a window; cancel with a 'q'
+        # Show in a window
         cv2.imshow("video", frame)
+
+        # Wait 1 ms; cancel with a 'q'
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+
+        # Track FPS
+        fps.update()
+
+
