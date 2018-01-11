@@ -5,6 +5,7 @@ import numpy as np
 import quickdraw
 import random
 import argparse
+from utils import FPS, WebcamVideoStream
 
 
 # Settings via command line args or defaults
@@ -15,16 +16,10 @@ parser.add_argument("--video",
 parser.add_argument("--sketch", 
                     help="show facial features as hand drawn images from the quick-draw dataset",
                     action="store_true")
-parser.add_argument("--verbose", "-v",
-                    help="log a bunch of stuff",
-                    action="store_true")
 settings = vars(parser.parse_args())
 
-settings['process_nth_frame'] = 2
+settings['process_nth_frame'] = 1
 settings['scale_frame'] = 4
-
-# Get a reference to webcam #0 (the default one)
-video_capture = cv2.VideoCapture(0)
 
 # Initialize some variables
 face_landmarks_list = []
@@ -32,18 +27,18 @@ frame_count = 0
 pp = pprint.PrettyPrinter(indent=4)
 canvas = None
 sketch_images = None
+width = 1280
+height = 720
 
-# Helper
-def log(msg):
-    if settings['verbose']:
-        pp.pprint(msg)
+# Get a reference to webcam #0 (the default one)
+video_capture = WebcamVideoStream(src = 0, width = width, height = height).start()
+
+# Track fps
+fps = FPS().start()
 
 while True:
     # Grab a single frame of video
-    ret, frame = video_capture.read()
-
-    # Capture height and width of window[
-    height, width = frame.shape[:2]
+    frame = video_capture.read()
 
     # Pick the background to draw on
     if settings['video']:
@@ -56,14 +51,14 @@ while True:
     frame = cv2.resize(frame, (0, 0), fx=(1/settings['scale_frame']), fy=(1/settings['scale_frame']))
 
     # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-    rgb_frame = frame[:, :, ::-1]
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     # Only process every other frame of video to save time
     if (frame_count % settings['process_nth_frame']) == 0:
         # Find all the faces and face encodings in the current frame of video
         face_landmarks = face_recognition.face_landmarks(rgb_frame)
 
-    # Generate random features every so often
+    # Pick random sketches every so often
     if ((frame_count % 10) == 0) or (not sketch_images):
         sketch_images = { name : random.choice(quickdraw.images[name]) for name in ['eye', 'mouth', 'nose']}
         sketch_images['nose_bridge'] = sketch_images['nose']
@@ -72,8 +67,6 @@ while True:
 
     # Increment counter to track nth frame to process
     frame_count = (frame_count + 1) % 10000000
-
-    log(face_landmarks)
 
     # Display the results
     for face in face_landmarks:
@@ -108,7 +101,15 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
+    # Track FPS
+    fps.update()
+
+# Print time performance
+fps.stop()
+print('[INFO] elapsed time (total): {:.2f}'.format(fps.elapsed()))
+print('[INFO] approx. FPS: {:.2f}'.format(fps.fps()))
+
 # Release handle to the webcam
-video_capture.release()
+video_capture.stop()
 cv2.destroyAllWindows()
 
