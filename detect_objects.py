@@ -50,10 +50,8 @@ def detect_and_visualize(image):
     global detection_graph
     global category_index
     global sess
-    # Create a small frame for faster object detection
-    small_image = image.copy()
-    small_image = cv2.resize(small_image, (0, 0), fx=(1/1), fy=(1/1))
-    small_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    # Convert image from BGR (used in opencv) to RGB (used by object_detection model)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     # Definite input and output Tensors for detection_graph
     image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
     detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
@@ -61,11 +59,11 @@ def detect_and_visualize(image):
     detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
     num_detections = detection_graph.get_tensor_by_name('num_detections:0')
     # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
-    small_image_expanded = np.expand_dims(small_image, axis=0)
+    image_expanded = np.expand_dims(image, axis=0)
     # Actual detection.
     (boxes, scores, classes, num) = sess.run(
         [detection_boxes, detection_scores, detection_classes, num_detections],
-        feed_dict={image_tensor: small_image_expanded})
+        feed_dict={image_tensor: image_expanded})
     # Visualize by drawing on the numpy array image
     vis_util.visualize_boxes_and_labels_on_image_array(
         image,
@@ -75,7 +73,8 @@ def detect_and_visualize(image):
         category_index,
         use_normalized_coordinates=True,
         line_thickness=8)
-    # We modify the image in place, but return the image anyways
+    # Convert the image back into BGR for opencv
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     return image
 
 # Main function to demo/test when this is not used as a module.
@@ -86,14 +85,6 @@ if __name__ == "__main__":
     # Setup detector
     init()
     
-    # Used to process every other frame
-    process_frame = True
-
-    # Create multithreading input and output queues
-#    input_q = Queue(maxsize=5)
-#    output_q = Queue(maxsize=5)
-#    pool = Pool(2, detect_objects, (input_q, output_q))
-
     # Track fps
     fps = FPS().start()
 
@@ -101,13 +92,8 @@ if __name__ == "__main__":
         # Grab a single frame of video
         frame = video_capture.read()
 
-        # Put it onto the queue for detecting objects
-#        input_q.put(frame)
-
         # Detect!
-        if process_frame:
-            detect_and_visualize(frame)
-        process_frame = (not process_frame)
+        frame = detect_and_visualize(frame)
 
         # Show in a window
         cv2.imshow("video", frame)
@@ -125,6 +111,5 @@ if __name__ == "__main__":
     print('[INFO] approx. FPS: {:.2f}'.format(fps.fps()))
 
     # Cleanup
-    pool.terminate()
     video_capture.stop()
     cv2.destroyAllWindows()
