@@ -50,8 +50,6 @@ def detect_and_visualize(image):
     global detection_graph
     global category_index
     global sess
-    # Convert image from BGR (used in opencv) to RGB (used by object_detection model)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     # Definite input and output Tensors for detection_graph
     image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
     detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
@@ -73,8 +71,6 @@ def detect_and_visualize(image):
         category_index,
         use_normalized_coordinates=True,
         line_thickness=8)
-    # Convert the image back into BGR for opencv
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     return image
 
 # Main function to demo/test when this is not used as a module.
@@ -92,8 +88,14 @@ if __name__ == "__main__":
         # Grab a single frame of video
         frame = video_capture.read()
 
-        # Detect!
+        # Convert image from BGR (used in opencv) to RGB (used by object_detection model)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+         # Detect!
         frame = detect_and_visualize(frame)
+
+        # Convert the image back into BGR for opencv
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         # Show in a window
         cv2.imshow("video", frame)
