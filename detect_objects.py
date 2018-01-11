@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import time
 from utils import FPS, WebcamVideoStream
+from multiprocessing import Queue, Pool
 
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
@@ -46,13 +47,13 @@ def init():
 
 # Call this for each image. Pass in an image as a numpy array.
 def detect_and_visualize(image):
-    start_time = time.clock()
     global detection_graph
     global category_index
     global sess
     # Create a small frame for faster object detection
     small_image = image.copy()
     small_image = cv2.resize(small_image, (0, 0), fx=(1/1), fy=(1/1))
+    small_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     # Definite input and output Tensors for detection_graph
     image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
     detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
@@ -74,8 +75,6 @@ def detect_and_visualize(image):
         category_index,
         use_normalized_coordinates=True,
         line_thickness=8)
-    # Log time elapsed
-    print("detect time: " + str(time.clock() - start_time))
     # We modify the image in place, but return the image anyways
     return image
 
@@ -90,12 +89,20 @@ if __name__ == "__main__":
     # Used to process every other frame
     process_frame = True
 
+    # Create multithreading input and output queues
+#    input_q = Queue(maxsize=5)
+#    output_q = Queue(maxsize=5)
+#    pool = Pool(2, detect_objects, (input_q, output_q))
+
     # Track fps
     fps = FPS().start()
 
     while(True):
         # Grab a single frame of video
         frame = video_capture.read()
+
+        # Put it onto the queue for detecting objects
+#        input_q.put(frame)
 
         # Detect!
         if process_frame:
@@ -111,5 +118,13 @@ if __name__ == "__main__":
 
         # Track FPS
         fps.update()
+    
+    # Print time performance
+    fps.stop()
+    print('[INFO] elapsed time (total): {:.2f}'.format(fps.elapsed()))
+    print('[INFO] approx. FPS: {:.2f}'.format(fps.fps()))
 
-
+    # Cleanup
+    pool.terminate()
+    video_capture.stop()
+    cv2.destroyAllWindows()
