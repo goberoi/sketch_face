@@ -30,10 +30,9 @@ class ObjectDetector:
         self._category_index = None
         self._sess = None
 
-
+        logger.info("Start loading model...")
 
         # Create and load graph
-        logger.info("Start loading model...")
         self._detection_graph = tf.Graph()
         with self._detection_graph.as_default():
             # Load model into memory
@@ -42,18 +41,15 @@ class ObjectDetector:
                 serialized_graph = fid.read()
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
-        logger.info("... done.")
 
         # Load label map
-        logger.info("Start loading label map...")
         label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
         categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
         self._category_index = label_map_util.create_category_index(categories)
-        logger.info("... done.")
 
         # Start self._session
-        logger.info("Start TensorFlow session...")
         self._sess = tf.Session(graph=self._detection_graph)
+
         logger.info("... done.")
 
 
