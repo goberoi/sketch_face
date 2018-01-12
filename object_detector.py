@@ -4,7 +4,6 @@ import cv2
 import numpy as np
 import time
 from utils import FPS, WebcamVideoStream, convert_to_boxes_and_labels
-from multiprocessing import Queue, Pool
 
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
