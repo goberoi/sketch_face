@@ -13,27 +13,115 @@ from utils import FPS, WebcamVideoStream
 from object_detector import ObjectDetector
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def worker(input_q, output_q):
-    logger.info('worker: starting')
+def object_detection_worker(input_q, output_q):
+    logger.info('obj worker: starting')
 
     # Initialize some variables
-    canvas = None
-    sketch_images = None
     detector = ObjectDetector()
 
-    logger.debug('worker: done initializing variables')
+    logger.debug('object worker: done initializing variables')
 
     while True:
-        logger.debug('worker: about to read from input_q')
+        logger.debug('object worker: about to read from input_q')
 
         # Read input frame from queue
-        frame = input_q.get()
+        frame = object_input_q.get()
 
-        logger.debug('worker: done reading input_q')
+        logger.debug('object worker: done reading input_q')
+
+        # Detect objects
+        logger.debug('object worker: about to detect objects')
+        t = time.time()
+        detections = detector.detect(frame)
+        logger.debug('object worker: done detecting objects in %s' % str(time.time() - t))
+
+        # Put detections in queue for rendering by main thread
+        object_output_q.put(detections)
+
+
+def face_landmarks_worker(input_q, output_q):
+    logger.info('face worker: starting')
+
+    while True:
+        logger.debug('face worker: about to read from input_q')
+
+        # Read input frame from queue
+        frame = face_input_q.get()
+
+        logger.debug('face worker: done reading input_q')
+
+        # Detect facial landmarks
+        logger.debug('face worker: about to detect face landmarks')
+        t = time.time()
+        face_landmarks = face_recognition.face_landmarks(frame)
+        logger.debug('face worker: done detecting face landmarks in %s' % str(time.time() - t))
+
+        face_output_q.put(face_landmarks)
+
+
+if __name__ == '__main__':
+
+    # Settings via command line args or defaults
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--video", 
+                        help="show the camera's video feed in the background",
+                        action="store_true")
+    parser.add_argument("--sketch", 
+                        help="show facial features as hand drawn images from the quick-draw dataset",
+                        action="store_true")
+    settings = vars(parser.parse_args())
+
+    settings['process_nth_frame'] = 1
+    settings['scale_frame'] = 4
+    settings['height'] = 720
+    settings['width'] = 1280
+    settings['num_workers'] = 1
+    settings['queue_size'] = 1
+
+    # Setup object detection worker
+    object_input_q = Queue(settings['queue_size'])
+    object_output_q = Queue()
+    t = Thread(target=object_detection_worker, args=(object_input_q, object_output_q))
+    t.daemon = True
+    t.start()
+
+    # Setup face landmarks detection worker
+    face_input_q = Queue(settings['queue_size'])
+    face_output_q = Queue()
+    t = Thread(target=face_landmarks_worker, args=(face_input_q, face_output_q))
+    t.daemon = True
+    t.start()
+
+    logger.info('workers loaded')
+
+    # Get a reference to webcam #0 (the default one)
+    video_capture = WebcamVideoStream(src = 0, 
+                                      width = settings['width'], 
+                                      height = settings['height']).start()
+
+    canvas = None
+    sketch_images = None
+
+    logger.info('video capture start')
+
+    # Track fps
+    fps = FPS().start()
+
+#    skip_frame = False
+
+    while True:
+#        if skip_frame:
+#            skip_frame = False
+#            pass
+#        else:
+#            skip_frame = True
+
+        # Grab a single frame of video
+        frame = video_capture.read()
 
         # Pick the background to draw on
         if settings['video']:
@@ -41,7 +129,6 @@ def worker(input_q, output_q):
         else:
             canvas = np.zeros((settings['height'], settings['width'], 3), np.uint8)
             canvas[:, :, :] = (255, 255, 255)
-
         logger.debug('worker: done setting up canvas')
 
         # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
@@ -49,18 +136,12 @@ def worker(input_q, output_q):
 
         # Resize frame of video to for faster face recognition processing
         frame = cv2.resize(frame, (0, 0), fx=(1/settings['scale_frame']), fy=(1/settings['scale_frame']))
+        logger.debug('read, resized, and changed color scheme for one frame')
 
-        # Detect objects
-        logger.debug('worker: about to detect objects')
-        t = time.time()
-        detections = detector.detect(frame)
-        logger.debug('worker: done detecting objects in %s' % str(time.time() - t))
-
-        # Detect facial landmarks
-        logger.debug('worker: about to detect face landmarks')
-        t = time.time()
-        face_landmarks = face_recognition.face_landmarks(frame)
-        logger.debug('worker: done detecting face landmarks in %s' % str(time.time() - t))
+        # Send task to async workers
+        object_input_q.put(frame)
+        face_input_q.put(frame)
+        logger.debug('put a frame on the input_q, now waiting on output_q')
 
         # Pick random sketches every so often
         if (not sketch_images) or (random.randint(1,100) < 10):
@@ -68,12 +149,11 @@ def worker(input_q, output_q):
             sketch_images['nose_bridge'] = sketch_images['nose']
             sketch_images['left_eye'] = sketch_images['eye']
             sketch_images['right_eye'] = sketch_images['eye']
-            
-        # Render boxes
-        logger.debug('worker: about to render object detections')
-        t = time.time()
-        canvas = detector.render(canvas, detections, skip_classes = ['person'])
-        logger.debug('worker: done rendering object detections in %s' % str(time.time() - t))
+
+
+        # Pull face landmark results and render them
+        face_landmarks = face_output_q.get()
+        logger.debug('got face landmarks from face_output_q')
 
         # Render face lines, and quickdraw sketch images
         logger.debug('worker: about to render face landmarks')
@@ -104,73 +184,15 @@ def worker(input_q, output_q):
                     cv2.polylines(canvas, [np_points], close_polygon, color, 3)
         logger.debug('worker: done rendering face landmarks %s' % str(time.time() - t))
 
-        output_q.put(canvas)
+        # Pull object detections and render them
+        detections = object_output_q.get()
+        logger.debug('got object detections from face_output_q')
 
-
-if __name__ == '__main__':
-
-    # Settings via command line args or defaults
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--video", 
-                        help="show the camera's video feed in the background",
-                        action="store_true")
-    parser.add_argument("--sketch", 
-                        help="show facial features as hand drawn images from the quick-draw dataset",
-                        action="store_true")
-    settings = vars(parser.parse_args())
-
-    settings['process_nth_frame'] = 1
-    settings['scale_frame'] = 4
-    settings['height'] = 720
-    settings['width'] = 1280
-    settings['num_workers'] = 1
-    settings['queue_size'] = 1
-
-    # Setup multithreading stuff
-    input_q = Queue(settings['queue_size'])
-    output_q = Queue()
-    for i in range(settings['num_workers']):
-        t = Thread(target=worker, args=(input_q, output_q))
-        t.daemon = True
-        t.start()
-
-    logger.info('workers loaded')
-
-    # Get a reference to webcam #0 (the default one)
-    video_capture = WebcamVideoStream(src = 0, 
-                                      width = settings['width'], 
-                                      height = settings['height']).start()
-
-    logger.info('video capture start')
-
-    # Track fps
-    fps = FPS().start()
-
-#    skip_frame = False
-
-    while True:
-#        if skip_frame:
-#            skip_frame = False
-#            pass
-#        else:
-#            skip_frame = True
-
-        # Grab a single frame of video
-        frame = video_capture.read()
-
-        logger.debug('read one frame')
-
-        # Send task to async workers
-        input_q.put(frame)
-
-        logger.debug('put a frame on the input_q, now waiting on output_q')
-
-        # Pull any available results from async workers
-        if output_q.empty():
-            canvas = frame
-        else:
-            canvas = output_q.get()
-            logger.debug('got frame from output_q')
+        # Render boxes
+        logger.debug('worker: about to render object detections')
+        t = time.time()
+        canvas = ObjectDetector.render(canvas, detections, skip_classes = ['person'])
+        logger.debug('worker: done rendering object detections in %s' % str(time.time() - t))
 
         # Display the resulting image
         cv2.imshow('Video', canvas)

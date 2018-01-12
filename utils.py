@@ -33,8 +33,11 @@ class FPS:
 
     def elapsed(self):
         # return the total number of seconds between the start and
-        # end interval
-        return (self._end - self._start).total_seconds()
+        # end interval, or if that's missing, then till now
+        end_time = self._end
+        if not end_time:
+            end_time = datetime.datetime.now()
+        return (end_time - self._start).total_seconds()
 
     def fps(self):
         # compute the (approximate) frames per second

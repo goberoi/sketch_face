@@ -27,7 +27,7 @@ class ObjectDetector:
         self._category_index = None
         self._sess = None
 
-        logger.info("Start loading model...")
+        logger.info("Start init: load model, load labels, start session..")
 
         # Create and load graph
         self._detection_graph = tf.Graph()
@@ -47,7 +47,7 @@ class ObjectDetector:
         # Start session
         self._sess = tf.Session(graph=self._detection_graph)
 
-        logger.info("... done.")
+        logger.info("End init. Ready to detect objects.")
 
 
     # Call this for each image. Pass in an image as a numpy array
@@ -76,7 +76,8 @@ class ObjectDetector:
 
     
     # Render all detections, except thos in skip_classes, onto the given numpy array image
-    def render(self, image, detections, skip_classes = []):
+    @classmethod
+    def render(cls, image, detections, skip_classes = []):
         height, width, channels = image.shape
         for class_name, rect, class_color in zip(*detections):
             class_name_without_percent = class_name[0].split(':')[0]
