@@ -6,10 +6,8 @@ import time
 from utils import FPS, WebcamVideoStream, convert_to_boxes_and_labels
 
 from object_detection.utils import label_map_util
-from object_detection.utils import visualization_utils as vis_util
 
 import logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -46,7 +44,7 @@ class ObjectDetector:
         categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
         self._category_index = label_map_util.create_category_index(categories)
 
-        # Start self._session
+        # Start session
         self._sess = tf.Session(graph=self._detection_graph)
 
         logger.info("... done.")
@@ -90,6 +88,8 @@ class ObjectDetector:
 
 # Main function to demo/test when this is not used as a module.
 if __name__ == "__main__":
+    logger.info('starting object_detector demo')
+
     # Get a reference to webcam #0 (the default one)
     video_capture = WebcamVideoStream(src = 0, width = 480, height = 360).start()
 

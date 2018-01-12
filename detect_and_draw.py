@@ -6,37 +6,16 @@ import quickdraw
 import random
 import argparse
 from utils import FPS, WebcamVideoStream
-from object_detector import ObjectDetector
 from multiprocessing import Queue, Pool
+from object_detector import ObjectDetector
+
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-
-#def worker(input_q, output_q):
-
-if __name__ == '__main__':
-
-    # Settings via command line args or defaults
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--video", 
-                        help="show the camera's video feed in the background",
-                        action="store_true")
-    parser.add_argument("--sketch", 
-                        help="show facial features as hand drawn images from the quick-draw dataset",
-                        action="store_true")
-    settings = vars(parser.parse_args())
-
-    settings['process_nth_frame'] = 1
-    settings['scale_frame'] = 4
-    settings['height'] = 720
-    settings['width'] = 1280
-
-    # Get a reference to webcam #0 (the default one)
-    video_capture = WebcamVideoStream(src = 0, 
-                                      width = settings['width'], 
-                                      height = settings['height']).start()
-
-    # Track fps
-    fps = FPS().start()
+def worker(input_q, output_q):
+    logger.info('worker: starting')
 
     # Initialize some variables
     face_landmarks_list = []
@@ -45,9 +24,15 @@ if __name__ == '__main__':
     sketch_images = None
     detector = ObjectDetector()
 
+    logger.debug('worker: done initializing variables')
+
     while True:
-        # Grab a single frame of video
-        frame = video_capture.read()
+        logger.debug('worker: about to read from input_q')
+
+        # Read input frame from queue
+        frame = input_q.get()
+
+        logger.debug('worker: done reading input_q')
 
         # Pick the background to draw on
         if settings['video']:
@@ -56,18 +41,24 @@ if __name__ == '__main__':
             canvas = np.zeros((settings['height'], settings['width'], 3), np.uint8)
             canvas[:, :, :] = (255, 255, 255)
 
+        logger.debug('worker: done setting up canvas')
+
         # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # Only process every other frame of video to save time
-        if (frame_count % settings['process_nth_frame']) == 0:
-            # Detect objects
-            detections = detector.detect(frame)
-            # Resize frame of video to for faster face recognition processing
-            frame = cv2.resize(frame, (0, 0), fx=(1/settings['scale_frame']), fy=(1/settings['scale_frame']))
-            # Detect facial landmarks
-            face_landmarks = face_recognition.face_landmarks(frame)
+        logger.debug('worker: about to detect objects')
 
+        # Detect objects
+        detections = detector.detect(frame)
+
+        logger.debug('worker: done detecting objects')
+
+        # Resize frame of video to for faster face recognition processing
+        frame = cv2.resize(frame, (0, 0), fx=(1/settings['scale_frame']), fy=(1/settings['scale_frame']))
+
+        # Detect facial landmarks
+        face_landmarks = face_recognition.face_landmarks(frame)
+            
         # Render boxes
         canvas = detector.render(canvas, detections, skip_classes = ['person'])
 
@@ -78,10 +69,7 @@ if __name__ == '__main__':
             sketch_images['left_eye'] = sketch_images['eye']
             sketch_images['right_eye'] = sketch_images['eye']
 
-        # Increment counter to track nth frame to process
-        frame_count = (frame_count + 1) % 10000000
-
-        # Display the results
+        # Render face lines, and quickdraw sketch images
         for face in face_landmarks:
             # Draw landmarks
             for landmark, points in face.items():
@@ -107,6 +95,65 @@ if __name__ == '__main__':
                 else:
                     cv2.polylines(canvas, [np_points], close_polygon, color, 3)
 
+        output_q.put(canvas)
+
+
+if __name__ == '__main__':
+
+    # Settings via command line args or defaults
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--video", 
+                        help="show the camera's video feed in the background",
+                        action="store_true")
+    parser.add_argument("--sketch", 
+                        help="show facial features as hand drawn images from the quick-draw dataset",
+                        action="store_true")
+    settings = vars(parser.parse_args())
+
+    settings['process_nth_frame'] = 1
+    settings['scale_frame'] = 4
+    settings['height'] = 720
+    settings['width'] = 1280
+    settings['num_workers'] = 2
+    settings['queue_size'] = 5
+
+    # Setup multithreading stuff
+    input_q = Queue(maxsize=settings['queue_size'])
+    output_q = Queue(maxsize=settings['queue_size'])
+    pool = Pool(settings['num_workers'], worker, (input_q, output_q))
+
+    logger.info('workers loaded')
+
+    # Get a reference to webcam #0 (the default one)
+    video_capture = WebcamVideoStream(src = 0, 
+                                      width = settings['width'], 
+                                      height = settings['height']).start()
+
+    logger.info('video capture start')
+
+    # Track fps
+    fps = FPS().start()
+
+    while True:
+        # Grab a single frame of video
+        frame = video_capture.read()
+
+        logger.debug('read one frame')
+
+        # Send task to async workers
+        input_q.put(frame)
+
+
+        logger.debug('put a frame on the input_q, now waiting on output_q')
+
+        # Pull any available results from async workers
+        try:
+            canvas = output_q.get(True, timeout=1)
+        except:
+            canvas = frame
+
+        logger.debug('got frame from output_q')
+
         # Display the resulting image
         cv2.imshow('Video', canvas)
 
@@ -119,10 +166,10 @@ if __name__ == '__main__':
 
     # Print time performance
     fps.stop()
-    print('[INFO] elapsed time (total): {:.2f}'.format(fps.elapsed()))
-    print('[INFO] approx. FPS: {:.2f}'.format(fps.fps()))
+    logger.info('[INFO] elapsed time (total): {:.2f}'.format(fps.elapsed()))
+    logger.info('[INFO] approx. FPS: {:.2f}'.format(fps.fps()))
 
     # Release handle to the webcam
     video_capture.stop()
     cv2.destroyAllWindows()
-
+    pool.terminate()
