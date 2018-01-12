@@ -6,7 +6,8 @@ import quickdraw
 import random
 import argparse
 from utils import FPS, WebcamVideoStream
-from multiprocessing import Queue, Pool
+from queue import Queue
+from threading import Thread
 from object_detector import ObjectDetector
 
 import logging
@@ -114,13 +115,16 @@ if __name__ == '__main__':
     settings['scale_frame'] = 4
     settings['height'] = 720
     settings['width'] = 1280
-    settings['num_workers'] = 2
+    settings['num_workers'] = 4
     settings['queue_size'] = 5
 
     # Setup multithreading stuff
-    input_q = Queue(maxsize=settings['queue_size'])
-    output_q = Queue(maxsize=settings['queue_size'])
-    pool = Pool(settings['num_workers'], worker, (input_q, output_q))
+    input_q = Queue(settings['queue_size'])
+    output_q = Queue()
+    for i in range(settings['num_workers']):
+        t = Thread(target=worker, args=(input_q, output_q))
+        t.daemon = True
+        t.start()
 
     logger.info('workers loaded')
 
@@ -143,26 +147,25 @@ if __name__ == '__main__':
         # Send task to async workers
         input_q.put(frame)
 
-
         logger.debug('put a frame on the input_q, now waiting on output_q')
 
         # Pull any available results from async workers
-        try:
-            canvas = output_q.get(True, timeout=1)
-        except:
+        if output_q.empty():
             canvas = frame
-
-        logger.debug('got frame from output_q')
+        else:
+            canvas = output_q.get()
+            logger.debug('got frame from output_q')
 
         # Display the resulting image
         cv2.imshow('Video', canvas)
+
+        # Track FPS
+        fps.update()
 
         # Hit 'q' on the keyboard to quit!
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-        # Track FPS
-        fps.update()
 
     # Print time performance
     fps.stop()
@@ -172,4 +175,3 @@ if __name__ == '__main__':
     # Release handle to the webcam
     video_capture.stop()
     cv2.destroyAllWindows()
-    pool.terminate()
