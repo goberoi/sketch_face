@@ -106,7 +106,7 @@ if __name__ == '__main__':
     # Setup some rendering related things
     canvas = None
     quickdraw = QuickDraw()
-    sketch_images = None
+    sketch_images = {}
     line_color = (156,156,156)
 
     logger.info('video capture start')
@@ -147,11 +147,9 @@ if __name__ == '__main__':
         logger.debug('put a frame on the input_q, now waiting on output_q')
 
         # Pick random sketches every so often
-        if (not sketch_images) or (random.randint(1,100) < 10):
-            sketch_images = {}
-            sketch_images['nose_bridge'] = quickdraw.get_random('nose')
-            sketch_images['left_eye'] = quickdraw.get_random('eye')
-            sketch_images['right_eye'] = sketch_images['left_eye']
+        sketch_images['nose_bridge'] = quickdraw.get_random('nose')
+        sketch_images['left_eye'] = quickdraw.get_random('eye')
+        sketch_images['right_eye'] = sketch_images['left_eye']
 
 
         # Pull face landmark results and render them
@@ -193,7 +191,7 @@ if __name__ == '__main__':
         # Render boxes
         logger.debug('worker: about to render object detections')
         t = time.time()
-        canvas = ObjectDetector.render(canvas, detections, skip_classes = ['person'], color = line_color)
+        canvas = ObjectDetector.render(canvas, detections, skip_classes = ['person'], color = line_color, quickdraw = quickdraw)
         logger.debug('worker: done rendering object detections in %s' % str(time.time() - t))
 
         # Display the resulting image

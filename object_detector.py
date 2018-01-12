@@ -77,18 +77,21 @@ class ObjectDetector:
     
     # Render all detections, except thos in skip_classes, onto the given numpy array image
     @classmethod
-    def render(cls, image, detections, skip_classes = [], color = None):
+    def render(cls, image, detections, skip_classes = [], color = None, quickdraw = None):
         height, width, channels = image.shape
-        for class_name, rect, class_color in zip(*detections):
-            class_name_without_percent = class_name[0].split(':')[0]
-            if not class_name_without_percent in skip_classes:
+        for class_name_and_score, rect, class_color in zip(*detections):
+            class_name = class_name_and_score[0].split(':')[0]
+            if not class_name in skip_classes:
                 rect[0] = (int(rect[0][0] * width), int(rect[0][1] * height))
                 rect[1] = (int(rect[1][0] * width), int(rect[1][1] * height))
                 line_color = class_color
                 if color:
                     line_color = color
-                cv2.rectangle(image, rect[0], rect[1], class_color, 3)
-                cv2.putText(image, class_name[0], rect[0], cv2.FONT_HERSHEY_SIMPLEX, 0.8, class_color, 2)
+                if class_name == 'cup' and quickdraw:
+                    quickdraw.render(image, rect[0][0], rect[0][1], quickdraw.get_random('coffee_cup'), 0.8)
+                else:
+                    cv2.rectangle(image, rect[0], rect[1], line_color, 3)
+                    cv2.putText(image, class_name_and_score[0], rect[0], cv2.FONT_HERSHEY_SIMPLEX, 0.8, line_color, 2)
         return image
 
 

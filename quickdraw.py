@@ -11,6 +11,7 @@ debug = False
 class QuickDraw:
 
     def __init__(self):
+        self._recent_image = {}
         self._images = {}
         for file in os.listdir(IMAGES_DIR):
             if file.endswith(".ndjson"):
@@ -27,8 +28,14 @@ class QuickDraw:
                 images.append(image)
         return images
 
-    def get_random(self, name):
-        return random.choice(self._images[name])
+    def get_random(self, name, chance_to_pick_new = 10):
+        random_image = random.choice(self._images[name])
+        recent_image = self._recent_image.get(name, random_image)
+        if (random.randint(1,100) < chance_to_pick_new):
+            self._recent_image[name] = random_image
+            return random_image
+        else:
+            return recent_image
 
     def render(self, canvas, x, y, image, scale=1):
         image_width = 256
