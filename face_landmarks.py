@@ -50,22 +50,20 @@ while True:
         canvas = np.zeros((height,width,3), np.uint8)
         canvas[:, :, :] = (255, 255, 255)
 
-    # Detect
-    detections = detect_objects.detect(frame)
-
-    # Render boxes
-    canvas = detect_objects.render(canvas, detections, skip_classes = ['person'])
-
-    # Resize frame of video to for faster face recognition processing
-    frame = cv2.resize(frame, (0, 0), fx=(1/settings['scale_frame']), fy=(1/settings['scale_frame']))
-
     # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     # Only process every other frame of video to save time
     if (frame_count % settings['process_nth_frame']) == 0:
-        # Find all the faces and face encodings in the current frame of video
-        face_landmarks = face_recognition.face_landmarks(rgb_frame)
+        # Detect objects
+        detections = detect_objects.detect(frame)
+        # Resize frame of video to for faster face recognition processing
+        frame = cv2.resize(frame, (0, 0), fx=(1/settings['scale_frame']), fy=(1/settings['scale_frame']))
+        # Detect facial landmarks
+        face_landmarks = face_recognition.face_landmarks(frame)
+
+    # Render boxes
+    canvas = detect_objects.render(canvas, detections, skip_classes = ['person'])
 
     # Pick random sketches every so often
     if ((frame_count % 10) == 0) or (not sketch_images):
