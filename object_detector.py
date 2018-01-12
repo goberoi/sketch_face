@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 # Constants: mostly to define what model weights to use, and where to find them.
-MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17' # Fastest, but poor accuracy.
-#MODEL_NAME = 'ssd_inception_v2_coco_2017_11_17' # Fast and reasonable accuracy.
+#MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17' # Fastest, but poor accuracy.
+MODEL_NAME = 'ssd_inception_v2_coco_2017_11_17' # Fast and reasonable accuracy.
 #MODEL_NAME = 'faster_rcnn_resnet50_coco_2017_11_08' # Waaay too slow to even tell.
 #MODEL_NAME = 'faster_rcnn_resnet50_lowproposals_coco_2017_11_08' # Still too slow.
 PATH_TO_MODEL_WEIGHTS = os.path.join('models', MODEL_NAME, 'frozen_inference_graph.pb')

@@ -52,16 +52,17 @@ def worker(input_q, output_q):
         # Resize frame of video to for faster face recognition processing
         frame = cv2.resize(frame, (0, 0), fx=(1/settings['scale_frame']), fy=(1/settings['scale_frame']))
 
+        # Detect objects
         logger.debug('worker: about to detect objects')
         t = time.time()
-
-        # Detect objects
         detections = detector.detect(frame)
-
         logger.debug('worker: done detecting objects in %s' % str(time.time() - t))
 
         # Detect facial landmarks
+        logger.debug('worker: about to detect face landmarks')
+        t = time.time()
         face_landmarks = face_recognition.face_landmarks(frame)
+        logger.debug('worker: done detecting face landmarks in %s' % str(time.time() - t))
             
         # Render boxes
         canvas = detector.render(canvas, detections, skip_classes = ['person'])
@@ -141,7 +142,15 @@ if __name__ == '__main__':
     # Track fps
     fps = FPS().start()
 
+#    skip_frame = False
+
     while True:
+#        if skip_frame:
+#            skip_frame = False
+#            pass
+#        else:
+#            skip_frame = True
+
         # Grab a single frame of video
         frame = video_capture.read()
 
