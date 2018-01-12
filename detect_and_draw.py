@@ -5,13 +5,15 @@ import numpy as np
 import quickdraw
 import random
 import argparse
-from utils import FPS, WebcamVideoStream
+import time
 from queue import Queue
 from threading import Thread
+
+from utils import FPS, WebcamVideoStream
 from object_detector import ObjectDetector
 
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -47,15 +49,16 @@ def worker(input_q, output_q):
         # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
+        # Resize frame of video to for faster face recognition processing
+        frame = cv2.resize(frame, (0, 0), fx=(1/settings['scale_frame']), fy=(1/settings['scale_frame']))
+
         logger.debug('worker: about to detect objects')
+        t = time.time()
 
         # Detect objects
         detections = detector.detect(frame)
 
-        logger.debug('worker: done detecting objects')
-
-        # Resize frame of video to for faster face recognition processing
-        frame = cv2.resize(frame, (0, 0), fx=(1/settings['scale_frame']), fy=(1/settings['scale_frame']))
+        logger.debug('worker: done detecting objects in %s' % str(time.time() - t))
 
         # Detect facial landmarks
         face_landmarks = face_recognition.face_landmarks(frame)
@@ -64,7 +67,7 @@ def worker(input_q, output_q):
         canvas = detector.render(canvas, detections, skip_classes = ['person'])
 
         # Pick random sketches every so often
-        if ((frame_count % 10) == 0) or (not sketch_images):
+        if (not sketch_images) or (random.randint(1,100) < 10):
             sketch_images = { name : random.choice(quickdraw.images[name]) for name in ['eye', 'mouth', 'nose']}
             sketch_images['nose_bridge'] = sketch_images['nose']
             sketch_images['left_eye'] = sketch_images['eye']
@@ -115,8 +118,8 @@ if __name__ == '__main__':
     settings['scale_frame'] = 4
     settings['height'] = 720
     settings['width'] = 1280
-    settings['num_workers'] = 4
-    settings['queue_size'] = 5
+    settings['num_workers'] = 1
+    settings['queue_size'] = 1
 
     # Setup multithreading stuff
     input_q = Queue(settings['queue_size'])

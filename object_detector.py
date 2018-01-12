@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 # Constants: mostly to define what model weights to use, and where to find them.
-#MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17' # Fastest, but poor accuracy.
-MODEL_NAME = 'ssd_inception_v2_coco_2017_11_17' # Fast and reasonable accuracy.
+MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17' # Fastest, but poor accuracy.
+#MODEL_NAME = 'ssd_inception_v2_coco_2017_11_17' # Fast and reasonable accuracy.
 #MODEL_NAME = 'faster_rcnn_resnet50_coco_2017_11_08' # Waaay too slow to even tell.
 #MODEL_NAME = 'faster_rcnn_resnet50_lowproposals_coco_2017_11_08' # Still too slow.
 PATH_TO_MODEL_WEIGHTS = os.path.join('models', MODEL_NAME, 'frozen_inference_graph.pb')
@@ -61,9 +61,11 @@ class ObjectDetector:
         # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
         image_expanded = np.expand_dims(image, axis=0)
         # Actual detection
+        t = time.time()
         (boxes, scores, classes, num) = self._sess.run(
             [detection_boxes, detection_scores, detection_classes, num_detections],
             feed_dict={image_tensor: image_expanded})
+        logger.debug('sess.run took %s' % str(time.time() - t))
         # Convert values returned from detector into a format that's easier to use for rendering
         (rect_points, class_names, class_colors) = convert_to_boxes_and_labels(
             np.squeeze(boxes),
