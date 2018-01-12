@@ -3,11 +3,12 @@ import os
 import cv2
 import numpy as np
 import time
-from utils import FPS, WebcamVideoStream
+from utils import FPS, WebcamVideoStream, convert_to_boxes_and_labels
 from multiprocessing import Queue, Pool
 
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
+
 
 # Constants: mostly to define what model weights to use, and where to find them.
 BASE_PATH = 'object_detection'
@@ -16,10 +17,12 @@ PATH_TO_MODEL_WEIGHTS = os.path.join(BASE_PATH, MODEL_NAME, 'frozen_inference_gr
 PATH_TO_LABELS = os.path.join(BASE_PATH, 'data', 'mscoco_label_map.pbtxt')
 NUM_CLASSES = 90
 
+
 # Gobals: so we can initialze and load weights just once
 detection_graph = None
 category_index = None
 sess = None
+
 
 # Initializer. Please call me first to laod the graph, category names, and start a session.
 def init():
@@ -45,8 +48,9 @@ def init():
     # Start session
     sess = tf.Session(graph=detection_graph)
 
-# Call this for each image. Pass in an image as a numpy array.
-def detect_and_visualize(image):
+
+# Call this for each image. Pass in an image as a numpy array
+def detect(image):
     global detection_graph
     global category_index
     global sess
@@ -58,20 +62,28 @@ def detect_and_visualize(image):
     num_detections = detection_graph.get_tensor_by_name('num_detections:0')
     # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
     image_expanded = np.expand_dims(image, axis=0)
-    # Actual detection.
+    # Actual detection
     (boxes, scores, classes, num) = sess.run(
         [detection_boxes, detection_scores, detection_classes, num_detections],
         feed_dict={image_tensor: image_expanded})
-    # Visualize by drawing on the numpy array image
-    vis_util.visualize_boxes_and_labels_on_image_array(
-        image,
+    # Convert values returned from detector into a format that's easier to use for rendering
+    (rect_points, class_names, class_colors) = convert_to_boxes_and_labels(
         np.squeeze(boxes),
         np.squeeze(classes).astype(np.int32),
         np.squeeze(scores),
-        category_index,
-        use_normalized_coordinates=True,
-        line_thickness=8)
+        category_index)
+    return class_names, rect_points, class_colors
+
+
+def render(image, detections):
+    height, width, channels = image.shape
+    for class_name, rect, class_color in zip(*detections):
+        rect[0] = (int(rect[0][0] * width), int(rect[0][1] * height))
+        rect[1] = (int(rect[1][0] * width), int(rect[1][1] * height))
+        cv2.rectangle(image, rect[0], rect[1], class_color, 2)
+        cv2.putText(image, class_name[0], rect[0], cv2.FONT_HERSHEY_SIMPLEX, 0.8, class_color, 2)
     return image
+
 
 # Main function to demo/test when this is not used as a module.
 if __name__ == "__main__":
@@ -92,7 +104,10 @@ if __name__ == "__main__":
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
          # Detect!
-        frame = detect_and_visualize(frame)
+        detections = detect(frame)
+
+        # Render
+        frame = render(frame, detections)
 
         # Convert the image back into BGR for opencv
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
