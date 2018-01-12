@@ -75,13 +75,15 @@ def detect(image):
     return class_names, rect_points, class_colors
 
 
-def render(image, detections):
+def render(image, detections, skip_classes = []):
     height, width, channels = image.shape
     for class_name, rect, class_color in zip(*detections):
-        rect[0] = (int(rect[0][0] * width), int(rect[0][1] * height))
-        rect[1] = (int(rect[1][0] * width), int(rect[1][1] * height))
-        cv2.rectangle(image, rect[0], rect[1], class_color, 2)
-        cv2.putText(image, class_name[0], rect[0], cv2.FONT_HERSHEY_SIMPLEX, 0.8, class_color, 2)
+        class_name_without_percent = class_name[0].split(':')[0]
+        if not class_name_without_percent in skip_classes:
+            rect[0] = (int(rect[0][0] * width), int(rect[0][1] * height))
+            rect[1] = (int(rect[1][0] * width), int(rect[1][1] * height))
+            cv2.rectangle(image, rect[0], rect[1], class_color, 2)
+            cv2.putText(image, class_name[0], rect[0], cv2.FONT_HERSHEY_SIMPLEX, 0.8, class_color, 2)
     return image
 
 
