@@ -21,8 +21,6 @@ def worker(input_q, output_q):
     logger.info('worker: starting')
 
     # Initialize some variables
-    face_landmarks_list = []
-    frame_count = 0
     canvas = None
     sketch_images = None
     detector = ObjectDetector()
@@ -63,9 +61,6 @@ def worker(input_q, output_q):
         t = time.time()
         face_landmarks = face_recognition.face_landmarks(frame)
         logger.debug('worker: done detecting face landmarks in %s' % str(time.time() - t))
-            
-        # Render boxes
-        canvas = detector.render(canvas, detections, skip_classes = ['person'])
 
         # Pick random sketches every so often
         if (not sketch_images) or (random.randint(1,100) < 10):
@@ -73,8 +68,16 @@ def worker(input_q, output_q):
             sketch_images['nose_bridge'] = sketch_images['nose']
             sketch_images['left_eye'] = sketch_images['eye']
             sketch_images['right_eye'] = sketch_images['eye']
+            
+        # Render boxes
+        logger.debug('worker: about to render object detections')
+        t = time.time()
+        canvas = detector.render(canvas, detections, skip_classes = ['person'])
+        logger.debug('worker: done rendering object detections in %s' % str(time.time() - t))
 
         # Render face lines, and quickdraw sketch images
+        logger.debug('worker: about to render face landmarks')
+        t = time.time()
         for face in face_landmarks:
             # Draw landmarks
             for landmark, points in face.items():
@@ -99,6 +102,7 @@ def worker(input_q, output_q):
                     pass
                 else:
                     cv2.polylines(canvas, [np_points], close_polygon, color, 3)
+        logger.debug('worker: done rendering face landmarks %s' % str(time.time() - t))
 
         output_q.put(canvas)
 
