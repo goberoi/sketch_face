@@ -2,13 +2,13 @@ import face_recognition
 import cv2
 import pprint
 import numpy as np
-import quickdraw
 import random
 import argparse
 import time
 from queue import Queue
 from threading import Thread
 
+from quickdraw import QuickDraw
 from utils import FPS, WebcamVideoStream
 from object_detector import ObjectDetector
 
@@ -103,8 +103,11 @@ if __name__ == '__main__':
                                       width = settings['width'], 
                                       height = settings['height']).start()
 
+    # Setup some rendering related things
     canvas = None
+    quickdraw = QuickDraw()
     sketch_images = None
+    line_color = (156,156,156)
 
     logger.info('video capture start')
 
@@ -145,10 +148,10 @@ if __name__ == '__main__':
 
         # Pick random sketches every so often
         if (not sketch_images) or (random.randint(1,100) < 10):
-            sketch_images = { name : random.choice(quickdraw.images[name]) for name in ['eye', 'mouth', 'nose']}
-            sketch_images['nose_bridge'] = sketch_images['nose']
-            sketch_images['left_eye'] = sketch_images['eye']
-            sketch_images['right_eye'] = sketch_images['eye']
+            sketch_images = {}
+            sketch_images['nose_bridge'] = quickdraw.get_random('nose')
+            sketch_images['left_eye'] = quickdraw.get_random('eye')
+            sketch_images['right_eye'] = sketch_images['left_eye']
 
 
         # Pull face landmark results and render them
@@ -164,7 +167,6 @@ if __name__ == '__main__':
                 np_points = np.array(points, dtype='int32')
                 np_points *= settings['scale_frame']
 
-                color = (156,156,156)
                 close_polygon = False
 
                 if landmark in ['left_eye', 'right_eye', 'nose_bridge']:
@@ -177,11 +179,11 @@ if __name__ == '__main__':
                     if settings['sketch']:
                         quickdraw.render(canvas, centroid[0], centroid[1], sketch_images[landmark], 0.2)
                     else:
-                        cv2.polylines(canvas, [np_points], close_polygon, color, 3)
+                        cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
                 elif landmark in ['nose_tip']:
                     pass
                 else:
-                    cv2.polylines(canvas, [np_points], close_polygon, color, 3)
+                    cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
         logger.debug('worker: done rendering face landmarks %s' % str(time.time() - t))
 
         # Pull object detections and render them
@@ -191,7 +193,7 @@ if __name__ == '__main__':
         # Render boxes
         logger.debug('worker: about to render object detections')
         t = time.time()
-        canvas = ObjectDetector.render(canvas, detections, skip_classes = ['person'])
+        canvas = ObjectDetector.render(canvas, detections, skip_classes = ['person'], color = line_color)
         logger.debug('worker: done rendering object detections in %s' % str(time.time() - t))
 
         # Display the resulting image
