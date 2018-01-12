@@ -11,10 +11,9 @@ from object_detection.utils import visualization_utils as vis_util
 
 
 # Constants: mostly to define what model weights to use, and where to find them.
-BASE_PATH = 'object_detection'
 MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
-PATH_TO_MODEL_WEIGHTS = os.path.join(BASE_PATH, MODEL_NAME, 'frozen_inference_graph.pb')
-PATH_TO_LABELS = os.path.join(BASE_PATH, 'data', 'mscoco_label_map.pbtxt')
+PATH_TO_MODEL_WEIGHTS = os.path.join('models', MODEL_NAME, 'frozen_inference_graph.pb')
+PATH_TO_LABELS = os.path.join('object_detection', 'data', 'mscoco_label_map.pbtxt')
 NUM_CLASSES = 90
 
 
