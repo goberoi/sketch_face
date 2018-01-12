@@ -6,7 +6,7 @@ import quickdraw
 import random
 import argparse
 from utils import FPS, WebcamVideoStream
-
+import detect_objects
 
 # Settings via command line args or defaults
 parser = argparse.ArgumentParser()
@@ -33,6 +33,9 @@ height = 720
 # Get a reference to webcam #0 (the default one)
 video_capture = WebcamVideoStream(src = 0, width = width, height = height).start()
 
+# Load object detection
+detect_objects.init()
+
 # Track fps
 fps = FPS().start()
 
@@ -46,6 +49,12 @@ while True:
     else:
         canvas = np.zeros((height,width,3), np.uint8)
         canvas[:, :, :] = (255, 255, 255)
+
+    # Detect
+    detections = detect_objects.detect(frame)
+
+    # Render boxes
+    canvas = detect_objects.render(canvas, detections, skip_classes = ['person'])
 
     # Resize frame of video to for faster face recognition processing
     frame = cv2.resize(frame, (0, 0), fx=(1/settings['scale_frame']), fy=(1/settings['scale_frame']))
