@@ -11,10 +11,53 @@ from threading import Thread
 from quickdraw import QuickDraw
 from utils import FPS, WebcamVideoStream
 from object_detector import ObjectDetector
+import pyyolo
 
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+
+def yolo_worker(input_q, output_q):
+    logger.info('yolo worker: starting')
+
+    # Get YOLO setup
+    darknet_path = 'pyyolo/darknet'
+    datacfg = 'cfg/coco.data'
+#    cfgfile = 'cfg/yolo.cfg'
+#    weightfile = 'weights/yolo.weights'
+    cfgfile = 'cfg/tiny-yolo.cfg'
+    weightfile = '../tiny-yolo.weights'
+
+    thresh = 0.24
+    hier_thresh = 0.5
+    pyyolo.init(darknet_path, datacfg, cfgfile, weightfile)
+
+    logger.debug('yolo worker: done initializing variables')
+
+    while True:
+        logger.debug('yolo worker: about to read from input_q')
+
+        # Read input frame from queue
+        frame = object_input_q.get()
+
+        logger.debug('yolo worker: done reading input_q')
+
+        # Detect objects
+        logger.debug('yolo worker: about to detect objects')
+        t = time.time()
+        c, h, w = frame.shape[2], frame.shape[0], frame.shape[1]
+        print("c, h, w = %s" % str((c, h, w)))
+        data = frame.ravel()/255.0
+        data = np.ascontiguousarray(data, dtype=np.float32)
+        outputs = pyyolo.detect(w, h, c, data, thresh, hier_thresh)
+        for output in outputs:
+            print(output)
+            print('*'*80)
+        logger.debug('yolo worker: done detecting objects in %s' % str(time.time() - t))
+
+        # Put detections in queue for rendering by main thread
+        object_output_q.put(outputs)
 
 
 def object_detection_worker(input_q, output_q):
@@ -76,7 +119,7 @@ if __name__ == '__main__':
     settings = vars(parser.parse_args())
 
     settings['process_nth_frame'] = 1
-    settings['scale_frame'] = 4
+    settings['scale_frame'] = 8
     settings['height'] = 720
     settings['width'] = 1280
     settings['num_workers'] = 1
@@ -85,7 +128,7 @@ if __name__ == '__main__':
     # Setup object detection worker
     object_input_q = Queue(settings['queue_size'])
     object_output_q = Queue()
-    t = Thread(target=object_detection_worker, args=(object_input_q, object_output_q))
+    t = Thread(target=yolo_worker, args=(object_input_q, object_output_q))
     t.daemon = True
     t.start()
 
