@@ -116,21 +116,25 @@ if __name__ == '__main__':
     parser.add_argument("--sketch", 
                         help="show facial features as hand drawn images from the quick-draw dataset",
                         action="store_true")
+    parser.add_argument("--objects", 
+                        help="detect objects and render them as well",
+                        action="store_true")
     settings = vars(parser.parse_args())
 
     settings['process_nth_frame'] = 1
-    settings['scale_frame'] = 8
+    settings['scale_frame'] = 4
     settings['height'] = 720
     settings['width'] = 1280
     settings['num_workers'] = 1
     settings['queue_size'] = 1
 
     # Setup object detection worker
-    object_input_q = Queue(settings['queue_size'])
-    object_output_q = Queue()
-    t = Thread(target=yolo_worker, args=(object_input_q, object_output_q))
-    t.daemon = True
-    t.start()
+    if settings['objects']:
+        object_input_q = Queue(settings['queue_size'])
+        object_output_q = Queue()
+        t = Thread(target=yolo_worker, args=(object_input_q, object_output_q))
+        t.daemon = True
+        t.start()
 
     # Setup face landmarks detection worker
     face_input_q = Queue(settings['queue_size'])
@@ -185,7 +189,8 @@ if __name__ == '__main__':
         logger.debug('read, resized, and changed color scheme for one frame')
 
         # Send task to async workers
-        object_input_q.put(frame)
+        if settings['objects']:
+            object_input_q.put(frame)
         face_input_q.put(frame)
         logger.debug('put a frame on the input_q, now waiting on output_q')
 
@@ -193,7 +198,6 @@ if __name__ == '__main__':
         sketch_images['nose_bridge'] = quickdraw.get_random('nose')
         sketch_images['left_eye'] = quickdraw.get_random('eye')
         sketch_images['right_eye'] = sketch_images['left_eye']
-
 
         # Pull face landmark results and render them
         face_landmarks = face_output_q.get()
@@ -227,15 +231,16 @@ if __name__ == '__main__':
                     cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
         logger.debug('worker: done rendering face landmarks %s' % str(time.time() - t))
 
-        # Pull object detections and render them
-        detections = object_output_q.get()
-        logger.debug('got object detections from face_output_q')
+        if settings['objects']:
+            # Pull object detections and render them
+            detections = object_output_q.get()
+            logger.debug('got object detections from face_output_q')
 
-        # Render boxes
-        logger.debug('worker: about to render object detections')
-        t = time.time()
-        canvas = ObjectDetector.render(canvas, detections, skip_classes = ['person'], color = line_color, quickdraw = quickdraw)
-        logger.debug('worker: done rendering object detections in %s' % str(time.time() - t))
+            # Render boxes
+            logger.debug('worker: about to render object detections')
+            t = time.time()
+            canvas = ObjectDetector.render(canvas, detections, skip_classes = ['person'], color = line_color, quickdraw = quickdraw)
+            logger.debug('worker: done rendering object detections in %s' % str(time.time() - t))
 
         # Display the resulting image
         cv2.imshow('Video', canvas)
