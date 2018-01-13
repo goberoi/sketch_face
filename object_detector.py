@@ -87,8 +87,8 @@ class ObjectDetector:
                 line_color = class_color
                 if color:
                     line_color = color
-                if class_name == 'cup' and quickdraw:
-                    quickdraw.render(image, rect[0][0], rect[0][1], quickdraw.get_random('coffee_cup'), 0.8)
+                if quickdraw and (class_name in quickdraw._images.keys()):
+                    quickdraw.render(image, rect[0][0], rect[0][1], quickdraw.get_random(class_name), 0.8)
                 else:
                     cv2.rectangle(image, rect[0], rect[1], line_color, 3)
                     cv2.putText(image, class_name_and_score[0], rect[0], cv2.FONT_HERSHEY_SIMPLEX, 0.8, line_color, 2)
