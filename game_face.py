@@ -79,15 +79,7 @@ if __name__ == '__main__':
     # Track fps
     fps = FPS().start()
 
-#    skip_frame = False
-
     while True:
-#        if skip_frame:
-#            skip_frame = False
-#            pass
-#        else:
-#            skip_frame = True
-
         # Grab a single frame of video
         frame = video_capture.read()
 
