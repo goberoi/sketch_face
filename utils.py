@@ -81,6 +81,33 @@ class WebcamVideoStream:
         self.stopped = True
 
 
+class VideoOutputStream:
+    def __init__(self):
+        self.frame = None
+        self.stopped = False
+
+    def start(self):
+        Thread(target=self.update, args=()).start()
+        return self
+
+    def update(self):
+        # keep looping infinitely until the thread is stopped
+        while True:
+            # if the thread indicator variable is set, stop the thread
+            if self.stopped:
+                return
+            # if there is a frame to display, display it!
+            if not self.frame is None:
+                cv2.imshow('Video', self.frame)
+
+    def write(self, frame):
+        self.frame = frame
+
+    def stop(self):
+        # indicate that the thread should be stopped
+        self.stopped = True
+
+
 def standard_colors():
     colors = [
         'AliceBlue', 'Chartreuse', 'Aqua', 'Aquamarine', 'Azure', 'Beige', 'Bisque',
