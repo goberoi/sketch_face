@@ -5,8 +5,8 @@ import numpy as np
 import random
 import argparse
 import time
-from queue import Queue
-from threading import Thread
+#from queue import Queue
+#from threading import Thread
 import math
 
 from quickdraw import QuickDraw
@@ -38,7 +38,7 @@ def face_landmarks_worker(input_q, output_q):
 
 
 class Sprite:
-    def __init__(self, image, position=[0, 0], direction=(100, 100)):
+    def __init__(self, image, position=[0, 0], direction=[100, 100]):
         self._position = position
         self._direction = direction
         self._image = image
@@ -57,6 +57,79 @@ class Sprite:
     def render(self, canvas):
         QuickDraw.render(canvas, self._position[0], self._position[1], self._image, 0.5)
         pass
+
+def _draw_face_landmark_points(face_landmarks, canvas):
+    for face in face_landmarks: 
+        for landmark, points in face.items():
+            if landmark in ['top_lip']:
+                continue
+            np_points = np.array(points, dtype='int32')
+            np_points *= settings['scale_frame']
+            count = 1
+            for point in np_points:
+                count += 1
+                cv2.circle(canvas, tuple(point), count, (0, 0, 255), 1)
+    return
+
+def compute_pose(face, canvas=None):
+    image_points = np.array([
+        face['nose_tip'][2],
+        face['chin'][8],
+        face['left_eye'][0],
+        face['right_eye'][3],
+        face['top_lip'][0],
+        face['bottom_lip'][0]],
+        dtype = 'double')
+    image_points *= settings['scale_frame']
+
+    for point in image_points:
+        cv2.circle(canvas, (int(point[0]), int(point[1])), 10, (255, 0, 0), -1)
+
+    # 3D model points.
+    model_points = np.array([
+            (0.0, 0.0, 0.0),             # Nose tip
+            (0.0, -330.0, -65.0),        # Chin
+            (-225.0, 170.0, -135.0),     # Left eye left corner
+            (225.0, 170.0, -135.0),      # Right eye right corne
+            (-150.0, -150.0, -125.0),    # Left Mouth corner
+            (150.0, -150.0, -125.0)      # Right mouth corner
+            ])
+
+    # Camera internals
+    size = canvas.shape
+    focal_length = size[1]
+    center = (size[1]/2, size[0]/2)
+    camera_matrix = np.array(
+        [[focal_length, 0, center[0]],
+         [0, focal_length, center[1]],
+         [0, 0, 1]], dtype = "double"
+        )
+
+    print("Camera Matrix :\n {0}".format(camera_matrix))
+
+    dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
+    (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
+
+    print("Rotation Vector:\n {0}".format(rotation_vector))
+    print("Translation Vector:\n {0}".format(translation_vector))
+
+    # Project a 3D point (0, 0, 1000.0) onto the image plane.
+    # We use this to draw a line sticking out of the nose
+
+    (nose_end_point2D, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 1000.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeffs)
+
+    # for p in image_points:
+    #     cv2.circle(im, (int(p[0]), int(p[1])), 3, (0,0,255), -1)
+
+    p1 = ( int(image_points[0][0]), int(image_points[0][1]))
+    p2 = ( int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
+
+    cv2.line(canvas, p1, p2, (255,0,0), 2)
+
+    pose = [p2[0] - p1[0], p2[1] - p1[1]]
+    print("pose: %s" % str(pose))
+
+    return pose
 
 if __name__ == '__main__':
 
@@ -97,7 +170,6 @@ if __name__ == '__main__':
     sketch_images = {}
     line_color = (156,156,156)
     sprites = []
-    sprites.append(Sprite(quickdraw.get_random('apple')))
 #    video_output = VideoOutputStream().start()
 
     # Track fps
@@ -165,6 +237,18 @@ if __name__ == '__main__':
                 else:
                     cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
         logger.debug('worker: done rendering face landmarks %s' % str(time.time() - t))
+
+
+        if (fps._numFrames % 60) == 0:
+            for face in face_landmarks:
+                # Compute head pose
+                pose = compute_pose(face, canvas)
+                mouth_center = np.array(face['top_lip'][3], dtype='int32') * settings['scale_frame']
+                print("mouth center: %s" % str(mouth_center))
+                sprite = Sprite(quickdraw.get_random('apple'),
+                                position = mouth_center,
+                                direction = pose)
+                sprites.append(sprite)
 
         # Update sprites on a second canvas
         for sprite in sprites:
