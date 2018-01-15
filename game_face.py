@@ -7,6 +7,7 @@ import argparse
 import time
 from queue import Queue
 from threading import Thread
+import math
 
 from quickdraw import QuickDraw
 from utils import FPS, WebcamVideoStream, VideoOutputStream
@@ -35,6 +36,27 @@ def face_landmarks_worker(input_q, output_q):
 
         face_output_q.put(face_landmarks)
 
+
+class Sprite:
+    def __init__(self, image, position=[0, 0], direction=(100, 100)):
+        self._position = position
+        self._direction = direction
+        self._image = image
+
+    def update(self, elapsed):
+        amplitude = 30
+        frequency = 2
+        self._position[0] += int(self._direction[0] * elapsed)
+        self._position[1] += int(self._direction[1] * elapsed)
+        if self._position[0] > settings['width'] \
+                or self._position[1] > settings['height'] \
+                or self._position[0] < 0 \
+                or self._position[1] < 0:
+            self._position = [0, 0]
+
+    def render(self, canvas):
+        QuickDraw.render(canvas, self._position[0], self._position[1], self._image, 0.5)
+        pass
 
 if __name__ == '__main__':
 
@@ -74,6 +96,8 @@ if __name__ == '__main__':
     quickdraw = QuickDraw()
     sketch_images = {}
     line_color = (156,156,156)
+    sprites = []
+    sprites.append(Sprite(quickdraw.get_random('apple')))
 #    video_output = VideoOutputStream().start()
 
     # Track fps
@@ -141,6 +165,11 @@ if __name__ == '__main__':
                 else:
                     cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
         logger.debug('worker: done rendering face landmarks %s' % str(time.time() - t))
+
+        # Update sprites on a second canvas
+        for sprite in sprites:
+            sprite.update(fps.elapsed_since_last_update())
+            sprite.render(canvas)
 
         # Display the resulting image
         cv2.imshow('Video', canvas)

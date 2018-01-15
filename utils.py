@@ -7,6 +7,7 @@ import cv2
 import datetime
 from threading import Thread
 from matplotlib import colors
+import time
 
 
 class FPS:
@@ -16,6 +17,7 @@ class FPS:
         self._start = None
         self._end = None
         self._numFrames = 0
+        self._last_update_time = time.time()
 
     def start(self):
         # start the timer
@@ -30,6 +32,10 @@ class FPS:
         # increment the total number of frames examined during the
         # start and end intervals
         self._numFrames += 1
+        self._last_update_time = time.time()
+
+    def elapsed_since_last_update(self):
+        return (time.time() - self._last_update_time)
 
     def elapsed(self):
         # return the total number of seconds between the start and

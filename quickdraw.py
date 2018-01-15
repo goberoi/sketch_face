@@ -37,7 +37,8 @@ class QuickDraw:
         else:
             return recent_image
 
-    def render(self, canvas, x, y, image, scale=1):
+    @classmethod
+    def render(cls, canvas, x, y, image, scale=1):
         image_width = 256
         image_height = 180
 
