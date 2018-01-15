@@ -11,7 +11,7 @@
 * Google object detection example: https://towardsdatascience.com/building-a-real-time-object-recognition-app-with-tensorflow-and-opencv-b7a2b4ebdc32
 * Download binaries of tensorflow for Mac; 30-40% speed increase: https://github.com/lakshayg/tensorflow-build
 * face_recognition library's demo code: https://github.com/ageitgey/face_recognition/blob/master/examples/facerec_from_webcam_faster.py
-
+* head pose estimation: https://www.learnopencv.com/head-pose-estimation-using-opencv-and-dlib/
 
 ## Notes
 

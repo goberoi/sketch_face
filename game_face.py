@@ -4,8 +4,6 @@ import numpy as np
 import random
 import argparse
 import time
-#from queue import Queue
-#from threading import Thread
 import math
 
 from quickdraw import QuickDraw
@@ -14,26 +12,6 @@ from utils import FPS, WebcamVideoStream, VideoOutputStream
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-def face_landmarks_worker(input_q, output_q):
-    logger.info('face worker: starting')
-
-    while True:
-        logger.debug('face worker: about to read from input_q')
-
-        # Read input frame from queue
-        frame = face_input_q.get()
-
-        logger.debug('face worker: done reading input_q')
-
-        # Detect facial landmarks
-        logger.debug('face worker: about to detect face landmarks')
-        t = time.time()
-        face_landmarks = face_recognition.face_landmarks(frame)
-        logger.debug('face worker: done detecting face landmarks in %s' % str(time.time() - t))
-
-        face_output_q.put(face_landmarks)
 
 
 class Sprite:
@@ -59,18 +37,6 @@ class Sprite:
         QuickDraw.render(canvas, self._position[0], self._position[1], self._image, 0.5)
         pass
 
-def _draw_face_landmark_points(face_landmarks, canvas):
-    for face in face_landmarks: 
-        for landmark, points in face.items():
-            if landmark in ['top_lip']:
-                continue
-            np_points = np.array(points, dtype='int32')
-            np_points *= settings['scale_frame']
-            count = 1
-            for point in np_points:
-                count += 1
-                cv2.circle(canvas, tuple(point), count, (0, 0, 255), 1)
-    return
 
 def compute_pose(face, canvas=None):
     image_points = np.array([
@@ -111,20 +77,17 @@ def compute_pose(face, canvas=None):
 
     # Project a 3D point (0, 0, 1000.0) onto the image plane.
     # We use this to draw a line sticking out of the nose
-
     (nose_end_point2D, jacobian) = cv2.projectPoints(np.array([(0.0, 0.0, 1000.0)]), rotation_vector, translation_vector, camera_matrix, dist_coeffs)
-
-    # for p in image_points:
-    #     cv2.circle(im, (int(p[0]), int(p[1])), 3, (0,0,255), -1)
-
     p1 = ( int(image_points[0][0]), int(image_points[0][1]))
     p2 = ( int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
 
+    # Draw the line
     cv2.line(canvas, p1, p2, (255,0,0), 2)
 
     pose = [p2[0] - p1[0], p2[1] - p1[1]]
 
     return pose
+
 
 if __name__ == '__main__':
 
@@ -137,22 +100,10 @@ if __name__ == '__main__':
                         help="show facial features as hand drawn images from the quick-draw dataset",
                         action="store_true")
     settings = vars(parser.parse_args())
-
     settings['process_nth_frame'] = 1
     settings['scale_frame'] = 4
     settings['height'] = 720
     settings['width'] = 1280
-    settings['num_workers'] = 1
-    settings['queue_size'] = 1
-
-    # Setup face landmarks detection worker
-#    face_input_q = Queue(settings['queue_size'])
-#    face_output_q = Queue()
-#    t = Thread(target=face_landmarks_worker, args=(face_input_q, face_output_q))
-#    t.daemon = True
-#    t.start()
-
-    logger.info('workers loaded')
 
     # Get a reference to webcam #0 (the default one)
     video_capture = WebcamVideoStream(src = 0, 
@@ -193,13 +144,7 @@ if __name__ == '__main__':
         sketch_images['left_eye'] = quickdraw.get_random('eye')
         sketch_images['right_eye'] = sketch_images['left_eye']
 
-        # Send task to async workers
-#        face_input_q.put(frame)
-#        logger.debug('put a frame on the input_q, now waiting on output_q')
-
-        # Pull face landmark results and render them
-#        face_landmarks = face_output_q.get()
-#        logger.debug('got face landmarks from face_output_q')
+        # Detect landmarks
         t = time.time()
         face_landmarks = face_recognition.face_landmarks(frame)
         logger.debug('done detecting face landmarks in %s' % str(time.time() - t))
@@ -221,7 +166,6 @@ if __name__ == '__main__':
                     sketch_image_scale = 0.2
                     if landmark in ['nose_bridge']:
                         sketch_image_scale = 0.5
-    #                cv2.circle(canvas, tuple(centroid), 5, color, 7)
                     if settings['sketch']:
                         quickdraw.render(canvas, centroid[0], centroid[1], sketch_images[landmark], 0.2)
                     else:
@@ -231,7 +175,6 @@ if __name__ == '__main__':
                 else:
                     cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
         logger.debug('worker: done rendering face landmarks %s' % str(time.time() - t))
-
 
         # Remove any sprites that have left the screen
         live_sprites = []
