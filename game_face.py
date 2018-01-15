@@ -1,6 +1,5 @@
 import face_recognition
 import cv2
-import pprint
 import numpy as np
 import random
 import argparse
@@ -107,13 +106,8 @@ def compute_pose(face, canvas=None):
          [0, 0, 1]], dtype = "double"
         )
 
-    print("Camera Matrix :\n {0}".format(camera_matrix))
-
     dist_coeffs = np.zeros((4,1)) # Assuming no lens distortion
     (success, rotation_vector, translation_vector) = cv2.solvePnP(model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
-
-    print("Rotation Vector:\n {0}".format(rotation_vector))
-    print("Translation Vector:\n {0}".format(translation_vector))
 
     # Project a 3D point (0, 0, 1000.0) onto the image plane.
     # We use this to draw a line sticking out of the nose
@@ -129,7 +123,6 @@ def compute_pose(face, canvas=None):
     cv2.line(canvas, p1, p2, (255,0,0), 2)
 
     pose = [p2[0] - p1[0], p2[1] - p1[1]]
-    print("pose: %s" % str(pose))
 
     return pose
 
@@ -249,6 +242,9 @@ if __name__ == '__main__':
 
         # Create new sprites for each face if mouth is open
         for face in face_landmarks:
+            if len(sprites) >= len(face_landmarks):
+                break
+
             # Compute if mouth is open if ratio of vertical open is nearly that of the horizontal mouth
             mouth_left = np.array(face['top_lip'][0])
             mouth_right = np.array(face['bottom_lip'][0])
@@ -256,12 +252,13 @@ if __name__ == '__main__':
             mouth_bottom = np.array(face['bottom_lip'][3])
             mouth_horizontal_distance = np.linalg.norm(mouth_right - mouth_left)
             mouth_vertical_distance = np.linalg.norm(mouth_bottom - mouth_top)
-            if mouth_horizontal_distance and ((mouth_vertical_distance / mouth_horizontal_distance) > .8):
-                # Compute head pose
+            if mouth_horizontal_distance and ((mouth_vertical_distance / mouth_horizontal_distance) > .7):
+                # Compute head pose, this is the direction the sprite will travel in
                 pose = compute_pose(face, canvas)
+                # Approximate the center of the mouth
                 mouth_center = np.array(face['top_lip'][3], dtype='int32') * settings['scale_frame']
-                print("mouth center: %s" % str(mouth_center))
-                sprite = Sprite(quickdraw.get_random('apple'),
+                # Add the sprite to the world
+                sprite = Sprite(quickdraw.get_random('apple', chance_to_pick_new = 100),
                                 position = mouth_center,
                                 direction = pose)
                 sprites.append(sprite)
