@@ -42,17 +42,19 @@ class Sprite:
         self._position = position
         self._direction = direction
         self._image = image
+        self._out_of_bounds = False
 
     def update(self, elapsed):
         amplitude = 30
         frequency = 2
         self._position[0] += int(self._direction[0] * elapsed)
         self._position[1] += int(self._direction[1] * elapsed)
+        # Check if it is out of bounds
         if self._position[0] > settings['width'] \
                 or self._position[1] > settings['height'] \
                 or self._position[0] < 0 \
                 or self._position[1] < 0:
-            self._position = [0, 0]
+            self._out_of_bounds = True
 
     def render(self, canvas):
         QuickDraw.render(canvas, self._position[0], self._position[1], self._image, 0.5)
@@ -170,7 +172,6 @@ if __name__ == '__main__':
     sketch_images = {}
     line_color = (156,156,156)
     sprites = []
-#    video_output = VideoOutputStream().start()
 
     # Track fps
     fps = FPS().start()
@@ -239,8 +240,23 @@ if __name__ == '__main__':
         logger.debug('worker: done rendering face landmarks %s' % str(time.time() - t))
 
 
-        if (fps._numFrames % 60) == 0:
-            for face in face_landmarks:
+        # Remove any sprites that have left the screen
+        live_sprites = []
+        for sprite in sprites:
+            if not sprite._out_of_bounds:
+                live_sprites.append(sprite)
+        sprites = live_sprites
+
+        # Create new sprites for each face if mouth is open
+        for face in face_landmarks:
+            # Compute if mouth is open if ratio of vertical open is nearly that of the horizontal mouth
+            mouth_left = np.array(face['top_lip'][0])
+            mouth_right = np.array(face['bottom_lip'][0])
+            mouth_top = np.array(face['top_lip'][3])
+            mouth_bottom = np.array(face['bottom_lip'][3])
+            mouth_horizontal_distance = np.linalg.norm(mouth_right - mouth_left)
+            mouth_vertical_distance = np.linalg.norm(mouth_bottom - mouth_top)
+            if mouth_horizontal_distance and ((mouth_vertical_distance / mouth_horizontal_distance) > .8):
                 # Compute head pose
                 pose = compute_pose(face, canvas)
                 mouth_center = np.array(face['top_lip'][3], dtype='int32') * settings['scale_frame']
@@ -257,7 +273,6 @@ if __name__ == '__main__':
 
         # Display the resulting image
         cv2.imshow('Video', canvas)
-#        video_output.write(frame)
 
         # Track FPS
         fps.update()
