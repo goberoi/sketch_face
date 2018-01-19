@@ -7,7 +7,7 @@ import time
 import math
 
 from quickdraw import QuickDraw
-from utils import FPS, WebcamVideoStream, VideoOutputStream
+from utils import FPS, WebcamVideoStream
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -22,8 +22,6 @@ class Sprite:
         self._out_of_bounds = False
 
     def update(self, elapsed):
-        amplitude = 30
-        frequency = 2
         self._position[0] += int(self._direction[0] * elapsed)
         self._position[1] += int(self._direction[1] * elapsed)
         # Check if it is out of bounds
@@ -49,8 +47,8 @@ def compute_pose(face, canvas=None):
         dtype = 'double')
     image_points *= settings['scale_frame']
 
-    for point in image_points:
-        cv2.circle(canvas, (int(point[0]), int(point[1])), 10, (255, 0, 0), -1)
+#    for point in image_points:
+#        cv2.circle(canvas, (int(point[0]), int(point[1])), 10, (255, 0, 0), -1)
 
     # 3D model points.
     model_points = np.array([
@@ -82,7 +80,7 @@ def compute_pose(face, canvas=None):
     p2 = ( int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
 
     # Draw the line
-    cv2.line(canvas, p1, p2, (255,0,0), 2)
+ #   cv2.line(canvas, p1, p2, (255,0,0), 2)
 
     pose = [p2[0] - p1[0], p2[1] - p1[1]]
 
@@ -185,9 +183,6 @@ if __name__ == '__main__':
 
         # Create new sprites for each face if mouth is open
         for face in face_landmarks:
-            if len(sprites) >= len(face_landmarks):
-                break
-
             # Compute if mouth is open if ratio of vertical open is nearly that of the horizontal mouth
             mouth_left = np.array(face['top_lip'][0])
             mouth_right = np.array(face['bottom_lip'][0])
