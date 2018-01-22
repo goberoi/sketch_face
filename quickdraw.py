@@ -1,3 +1,14 @@
+"""Interface to the Google Quickdraw dataset.
+
+This class assumes that you have a directory containing Google
+Quickdraw .ndjson files where the name of each file is the name of the
+image class.
+
+Here's the Quickdraw dataset:
+https://github.com/googlecreativelab/quickdraw-dataset
+
+"""
+
 import cv2
 import numpy as np
 import json
@@ -9,6 +20,7 @@ IMAGES_DIR = 'quickdraw_images'
 debug = False
 
 class QuickDraw:
+    """Interface to Google Quickdraw images."""
 
     def __init__(self):
         self._recent_image = {}
@@ -29,6 +41,11 @@ class QuickDraw:
         return images
 
     def get_random(self, name, chance_to_pick_new = 10):
+        """Return a random image of the given class name with the given
+        probability to pick a new one, vs. return the last one.
+
+        """
+
         random_image = random.choice(self._images[name])
         recent_image = self._recent_image.get(name, random_image)
         if (random.randint(1,100) < chance_to_pick_new):
@@ -39,6 +56,8 @@ class QuickDraw:
 
     @classmethod
     def render(cls, canvas, x, y, image, scale=1):
+        """Render the given image on the given numpy array. Scale down using the scale factor provided."""
+
         image_width = 256
         image_height = 180
 

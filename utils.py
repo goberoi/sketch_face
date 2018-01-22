@@ -1,16 +1,18 @@
-# From http://www.pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/
+"""Utilities for measuring frame rate, and reading frames in a separate thread.
 
-import struct
-import six
-import collections
+This code was mostly taken from: 
+http://www.pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/
+"""
+
 import cv2
 import datetime
-from threading import Thread
-from matplotlib import colors
 import time
+from threading import Thread
 
 
 class FPS:
+    """Helper class to track number of frames and time elapsed."""
+
     def __init__(self):
         # store the start time, end time, and total number of frames
         # that were examined between the start and end intervals
@@ -51,6 +53,8 @@ class FPS:
 
 
 class WebcamVideoStream:
+    """Helper class that replaces the standard OpenCV usb camera reading methods, with a threaded version."""
+
     def __init__(self, src, width, height):
         # initialize the video camera stream and read the first frame
         # from the stream

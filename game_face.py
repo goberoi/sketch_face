@@ -1,3 +1,13 @@
+"""Game Face is an interactive demo that uses a camera to render your face as a sketch.
+
+To use it, simply plug in a camera to your USB port and run "python
+game_face.py". Open your mouth to see apples flying out of it!
+
+We use landmark detection to identify key parts of your face. Then we
+we use a combination of the Google Quickdraw dataset and simple lines
+to render your face as a sketch.
+"""
+
 import face_recognition
 import cv2
 import numpy as np
@@ -15,6 +25,12 @@ logger = logging.getLogger(__name__)
 
 
 class Sprite:
+    """This represents a moving Google Quickdraw image on the screen.
+
+    Currently, it is used for rendering images that fly out of your
+    mouth when you open it.
+    """
+
     def __init__(self, image, position=[0, 0], direction=[100, 100]):
         self._position = position
         self._direction = direction
@@ -37,6 +53,13 @@ class Sprite:
 
 
 def compute_pose(face, canvas=None):
+    """Take face landmarks and return a 2D vector representing the direction of pose.
+    
+    This code was taken adapted from:
+    https://www.learnopencv.com/head-pose-estimation-using-opencv-and-dlib/
+    """
+
+    # Extract key parts of the face from face landmarks. Read the post above for details.
     image_points = np.array([
         face['nose_tip'][2],
         face['chin'][8],
@@ -47,8 +70,10 @@ def compute_pose(face, canvas=None):
         dtype = 'double')
     image_points *= settings['scale_frame']
 
-#    for point in image_points:
-#        cv2.circle(canvas, (int(point[0]), int(point[1])), 10, (255, 0, 0), -1)
+    # If a canvas was passed in, render the key points on the face.
+    if canvas is not None:
+        for point in image_points:
+            cv2.circle(canvas, (int(point[0]), int(point[1])), 10, (255, 0, 0), -1)
 
     # 3D model points.
     model_points = np.array([
@@ -61,7 +86,7 @@ def compute_pose(face, canvas=None):
             ])
 
     # Camera internals
-    size = canvas.shape
+    size = (settings['height'], settings['width'])
     focal_length = size[1]
     center = (size[1]/2, size[0]/2)
     camera_matrix = np.array(
@@ -79,8 +104,9 @@ def compute_pose(face, canvas=None):
     p1 = ( int(image_points[0][0]), int(image_points[0][1]))
     p2 = ( int(nose_end_point2D[0][0][0]), int(nose_end_point2D[0][0][1]))
 
-    # Draw the line
- #   cv2.line(canvas, p1, p2, (255,0,0), 2)
+    if canvas is not None:
+        # Draw a line pointing in the direction of the pose
+        cv2.line(canvas, p1, p2, (255,0,0), 2)
 
     pose = [p2[0] - p1[0], p2[1] - p1[1]]
 
@@ -88,22 +114,20 @@ def compute_pose(face, canvas=None):
 
 
 if __name__ == '__main__':
-
     # Settings via command line args or defaults
     parser = argparse.ArgumentParser()
     parser.add_argument("--video", 
                         help="show the camera's video feed in the background",
                         action="store_true")
-    parser.add_argument("--sketch", 
-                        help="show facial features as hand drawn images from the quick-draw dataset",
+    parser.add_argument("--nosketch", 
+                        help="don't show facial features as hand drawn images from the quick-draw dataset",
                         action="store_true")
     settings = vars(parser.parse_args())
-    settings['process_nth_frame'] = 1
     settings['scale_frame'] = 4
     settings['height'] = 720
     settings['width'] = 1280
 
-    # Get a reference to webcam #0 (the default one)
+    # Get a reference to webcam #0 (the default one). This could be made a command line option.
     video_capture = WebcamVideoStream(src = 0, 
                                       width = settings['width'], 
                                       height = settings['height']).start()
@@ -118,7 +142,9 @@ if __name__ == '__main__':
     # Track fps
     fps = FPS().start()
 
+    # Loop until the user hits 'q' to quit
     while True:
+
         # Grab a single frame of video
         frame = video_capture.read()
 
@@ -153,21 +179,24 @@ if __name__ == '__main__':
         for face in face_landmarks:
             # Draw landmarks
             for landmark, points in face.items():
+                # Turn the points into a numpy array for processing and scale them
                 np_points = np.array(points, dtype='int32')
                 np_points *= settings['scale_frame']
 
+                # Sometimes we want to connect the ends of a polygon, other times not
                 close_polygon = False
 
+                # Draw sketches for eyes and nose, but lines for the others
                 if landmark in ['left_eye', 'right_eye', 'nose_bridge']:
                     close_polygon = True
                     centroid = np.mean(np_points, axis=0).astype('int')
                     sketch_image_scale = 0.2
                     if landmark in ['nose_bridge']:
                         sketch_image_scale = 0.5
-                    if settings['sketch']:
-                        quickdraw.render(canvas, centroid[0], centroid[1], sketch_images[landmark], 0.2)
-                    else:
+                    if settings['nosketch']:
                         cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
+                    else:
+                        quickdraw.render(canvas, centroid[0], centroid[1], sketch_images[landmark], 0.2)
                 elif landmark in ['nose_tip']:
                     pass
                 else:
@@ -215,7 +244,6 @@ if __name__ == '__main__':
         # Hit 'q' on the keyboard to quit!
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
 
     # Print time performance
     fps.stop()
