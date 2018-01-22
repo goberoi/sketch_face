@@ -225,7 +225,7 @@ if __name__ == '__main__':
             mouth_bottom = np.array(face['bottom_lip'][3])
             mouth_horizontal_distance = np.linalg.norm(mouth_right - mouth_left)
             mouth_vertical_distance = np.linalg.norm(mouth_bottom - mouth_top)
-            if mouth_horizontal_distance and ((mouth_vertical_distance / mouth_horizontal_distance) > .7):
+            if mouth_horizontal_distance and ((mouth_vertical_distance / mouth_horizontal_distance) > .5):
                 # Compute head pose, this is the direction the sprite will travel in
                 if settings['showpose']:
                     pose = compute_pose(face, canvas)
