@@ -14,7 +14,6 @@ import numpy as np
 import random
 import argparse
 import time
-import math
 
 from quickdraw import QuickDraw
 from utils import FPS, WebcamVideoStream
