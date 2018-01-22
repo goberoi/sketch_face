@@ -61,7 +61,8 @@ def compute_pose(face, canvas=None):
 
     # Extract key parts of the face from face landmarks. Read the post above for details.
     image_points = np.array([
-        face['nose_tip'][2],
+#        face['nose_tip'][2],
+        face['nose_bridge'][3],
         face['chin'][8],
         face['left_eye'][0],
         face['right_eye'][3],
@@ -121,6 +122,9 @@ if __name__ == '__main__':
                         action="store_true")
     parser.add_argument("--nosketch", 
                         help="don't show facial features as hand drawn images from the quick-draw dataset",
+                        action="store_true")
+    parser.add_argument("--showpose", 
+                        help="show the pose as a line, along with the points used to compute the pose",
                         action="store_true")
     settings = vars(parser.parse_args())
     settings['scale_frame'] = 4
@@ -193,6 +197,7 @@ if __name__ == '__main__':
                     sketch_image_scale = 0.2
                     if landmark in ['nose_bridge']:
                         sketch_image_scale = 0.5
+
                     if settings['nosketch']:
                         cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
                     else:
@@ -201,6 +206,7 @@ if __name__ == '__main__':
                     pass
                 else:
                     cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
+
         logger.debug('worker: done rendering face landmarks %s' % str(time.time() - t))
 
         # Remove any sprites that have left the screen
@@ -221,7 +227,10 @@ if __name__ == '__main__':
             mouth_vertical_distance = np.linalg.norm(mouth_bottom - mouth_top)
             if mouth_horizontal_distance and ((mouth_vertical_distance / mouth_horizontal_distance) > .7):
                 # Compute head pose, this is the direction the sprite will travel in
-                pose = compute_pose(face, canvas)
+                if settings['showpose']:
+                    pose = compute_pose(face, canvas)
+                else:
+                    pose = compute_pose(face)
                 # Approximate the center of the mouth
                 mouth_center = np.array(face['top_lip'][3], dtype='int32') * settings['scale_frame']
                 # Add the sprite to the world
