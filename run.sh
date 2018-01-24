@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Allow xhost connections from any clients
-+xhost
+xhost +
 
 # Run docker image. Pass in usb webcam, display for output, etc.
 docker run \
@@ -16,4 +16,4 @@ docker run \
     goberoi/sketch_face
 
 # Disable xhost connections from any clients
--xhost
+xhost -
