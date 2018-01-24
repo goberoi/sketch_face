@@ -191,19 +191,20 @@ if __name__ == '__main__':
                 close_polygon = False
 
                 # Draw sketches for eyes and nose, but lines for the others
-                if landmark in ['left_eye', 'right_eye', 'nose_bridge']:
+                if landmark in ['left_eye', 'right_eye']:
                     close_polygon = True
                     centroid = np.mean(np_points, axis=0).astype('int')
-                    sketch_image_scale = 0.2
-                    if landmark in ['nose_bridge']:
-                        sketch_image_scale = 0.5
-
                     if settings['nosketch']:
                         cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
                     else:
                         quickdraw.render(canvas, centroid[0], centroid[1], sketch_images[landmark], 0.2)
                 elif landmark in ['nose_tip']:
                     pass
+                elif landmark in ['nose_bridge']:
+                    if settings['nosketch']:
+                        cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
+                    else:
+                        quickdraw.render(canvas, np_points[3][0], np_points[3][1], sketch_images[landmark], 0.2)
                 else:
                     cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
 

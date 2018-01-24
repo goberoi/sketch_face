@@ -25,10 +25,13 @@ class QuickDraw:
     def __init__(self):
         self._recent_image = {}
         self._images = {}
+        self._class_names = []
         for file in os.listdir(IMAGES_DIR):
             if file.endswith(".ndjson"):
                 name = file.split('.')[0]
                 self._images[name] = self._load_images(file)
+                self._class_names.append(name)
+
 
     # Helper to load data
     @classmethod
@@ -47,7 +50,7 @@ class QuickDraw:
         """
 
         if not name:
-            name = random.choice(list(self._images.keys()))
+            name = random.choice(self._class_names)
 
         random_image = random.choice(self._images[name])
         recent_image = self._recent_image.get(name, random_image)
