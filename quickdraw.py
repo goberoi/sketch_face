@@ -61,7 +61,7 @@ class QuickDraw:
             return recent_image
 
     @classmethod
-    def render(cls, canvas, x, y, image, scale=1):
+    def render(cls, canvas, x, y, image, scale=1, height=None, width=None):
         """Render the given image on the given numpy array. Scale down using the scale factor provided."""
 
         image_width = 256
@@ -70,6 +70,12 @@ class QuickDraw:
         if debug:
             cv2.circle(canvas, (int(x), int(y)), 2, (0,0,255))
             cv2.rectangle(canvas, (int(x - image_width/2), int(y - image_height/2)), (int(x + image_width/2), int(y + image_height/2)), (0,0,255), 1)
+
+        if height:
+            scale = (height / image_height)
+
+        if width:
+            scale = (width / image_width)
 
         drawing = image['drawing']
         for stroke in drawing:

@@ -1,11 +1,6 @@
-"""Game Face is an interactive demo that uses a camera to render your face as a sketch.
+"""Sketch Face is an interactive demo that uses a camera to render your face as a sketch.
 
-To use it, simply plug in a camera to your USB port and run "python
-game_face.py". Open your mouth to see apples flying out of it!
-
-We use landmark detection to identify key parts of your face. Then we
-we use a combination of the Google Quickdraw dataset and simple lines
-to render your face as a sketch.
+See README.md for details on installation, usage, and more.
 """
 
 import face_recognition
@@ -30,11 +25,12 @@ class Sprite:
     mouth when you open it.
     """
 
-    def __init__(self, image, position=[0, 0], direction=[100, 100]):
+    def __init__(self, image, position=[0, 0], direction=[100, 100], height=None):
         self._position = position
         self._direction = direction
         self._image = image
         self._out_of_bounds = False
+        self._height = height
 
     def update(self, elapsed):
         self._position[0] += int(self._direction[0] * elapsed)
@@ -47,7 +43,7 @@ class Sprite:
             self._out_of_bounds = True
 
     def render(self, canvas):
-        QuickDraw.render(canvas, self._position[0], self._position[1], self._image, 0.5)
+        QuickDraw.render(canvas, self._position[0], self._position[1], self._image, height=self._height)
         pass
 
 
@@ -224,24 +220,30 @@ if __name__ == '__main__':
                 break
 
             # Compute if mouth is open if ratio of vertical open is nearly that of the horizontal mouth
-            mouth_left = np.array(face['top_lip'][0])
-            mouth_right = np.array(face['bottom_lip'][0])
-            mouth_top = np.array(face['top_lip'][3])
-            mouth_bottom = np.array(face['bottom_lip'][3])
-            mouth_horizontal_distance = np.linalg.norm(mouth_right - mouth_left)
-            mouth_vertical_distance = np.linalg.norm(mouth_bottom - mouth_top)
-            if mouth_horizontal_distance and ((mouth_vertical_distance / mouth_horizontal_distance) > .5):
+            mouth_top = np.array(face['top_lip'][9]) * settings['scale_frame']
+            mouth_bottom = np.array(face['bottom_lip'][9]) * settings['scale_frame']
+            upper_lip_top = np.array(face['top_lip'][3]) * settings['scale_frame']
+
+            # Render for debugging
+#            cv2.circle(canvas, tuple(mouth_top), 10, (255,0,0), -1)
+#            cv2.circle(canvas, tuple(mouth_bottom), 5, (0,255,0), -1)
+#            cv2.circle(canvas, tuple(upper_lip_top), 5, (0,0,255), -1)
+
+            upper_lip_height = np.linalg.norm(mouth_top - upper_lip_top)
+            mouth_opening_height = np.linalg.norm(mouth_bottom - mouth_top)
+            if mouth_opening_height > 1.75 * upper_lip_height:
                 # Compute head pose, this is the direction the sprite will travel in
                 if settings['showpose']:
                     pose = compute_pose(face, canvas)
                 else:
                     pose = compute_pose(face)
                 # Approximate the center of the mouth
-                mouth_center = np.array(face['top_lip'][3], dtype='int32') * settings['scale_frame']
+                mouth_center = mouth_top + ((mouth_bottom - mouth_top) / 2)
                 # Add the sprite to the world
                 sprite = Sprite(quickdraw.get_random(name=None, chance_to_pick_new = 100),
                                 position = mouth_center,
-                                direction = pose)
+                                direction = pose,
+                                height = mouth_opening_height)
                 sprites.append(sprite)
                 last_added_sprite = time.time()
 
