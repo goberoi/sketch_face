@@ -40,11 +40,14 @@ class QuickDraw:
                 images.append(image)
         return images
 
-    def get_random(self, name, chance_to_pick_new = 10):
+    def get_random(self, name=None, chance_to_pick_new = 10):
         """Return a random image of the given class name with the given
         probability to pick a new one, vs. return the last one.
 
         """
+
+        if not name:
+            name = random.choice(list(self._images.keys()))
 
         random_image = random.choice(self._images[name])
         recent_image = self._recent_image.get(name, random_image)

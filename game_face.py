@@ -141,6 +141,7 @@ if __name__ == '__main__':
     sketch_images = {}
     line_color = (156,156,156)
     sprites = []
+    last_added_sprite = time.time()
 
     # Track fps
     fps = FPS().start()
@@ -217,6 +218,10 @@ if __name__ == '__main__':
 
         # Create new sprites for each face if mouth is open
         for face in face_landmarks:
+            # If we very recently added a sprite, don't bother to check any of this
+            if time.time() - last_added_sprite < 0.5:
+                break
+
             # Compute if mouth is open if ratio of vertical open is nearly that of the horizontal mouth
             mouth_left = np.array(face['top_lip'][0])
             mouth_right = np.array(face['bottom_lip'][0])
@@ -233,10 +238,11 @@ if __name__ == '__main__':
                 # Approximate the center of the mouth
                 mouth_center = np.array(face['top_lip'][3], dtype='int32') * settings['scale_frame']
                 # Add the sprite to the world
-                sprite = Sprite(quickdraw.get_random('apple', chance_to_pick_new = 100),
+                sprite = Sprite(quickdraw.get_random(name=None, chance_to_pick_new = 100),
                                 position = mouth_center,
                                 direction = pose)
                 sprites.append(sprite)
+                last_added_sprite = time.time()
 
         # Update sprites on a second canvas
         for sprite in sprites:
@@ -249,9 +255,20 @@ if __name__ == '__main__':
         # Track FPS
         fps.update()
 
-        # Hit 'q' on the keyboard to quit!
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        # Press the following keys to activate features
+        key_press = cv2.waitKey(1) & 0xFF
+        if key_press == ord('q'):
+            # 'q' to quit
             break
+        elif key_press == ord('v'):
+            # 'v' to turn video mode on or off
+            settings['video'] = not settings['video']
+        elif key_press == ord('p'):
+            # 'p' to turn pose showing on or off
+            settings['showpose'] = not settings['showpose']
+        elif key_press == ord('s'):
+            # 'p' to turn pose showing on or off
+            settings['nosketch'] = not settings['nosketch']
 
     # Print time performance
     fps.stop()
