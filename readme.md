@@ -4,7 +4,7 @@ Use your webcam to control a cartoon version of your face. Open your
 mouth to hurl cartoon objects in the direction you are facing.  Do it
 alone, or enjoy hours of fun with the whole family.
 
-![Alt Text](https://github.com/goberoi/face_experiments/blob/master/face_experiments.gif)
+![Alt Text](https://github.com/goberoi/sketch_face/blob/master/sketch_face.gif)
 
 ## Overview
 
@@ -23,9 +23,9 @@ This works on Ubuntu, but not on MacOS because
 It hasn't been tested on Windows.
 
 ```
-git clone git@github.com:goberoi/face_experiments.git
-docker build goberoi/face_experiments .
-docker -ti run goberoi/face_experiments
+git clone git@github.com:goberoi/sketch_face.git
+docker build goberoi/sketch_face .
+docker -ti run goberoi/sketch_face
 ```
 
 ## Usage

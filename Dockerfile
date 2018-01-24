@@ -1,4 +1,10 @@
-# Dockerfile template taken from: https://github.com/ageitgey/face_recognition/blob/master/Dockerfile
+# Parts of this Dockerfile were taken from other sources:
+#
+# For compiling dlib, a key face_recogition dependency, I borrowed from: 
+#     https://github.com/ageitgey/face_recognition/blob/master/Dockerfile
+#
+# For compiling OpenCV, I relied on:
+#     https://github.com/janza/docker-python3-opencv/blob/master/Dockerfile
 
 FROM python:3.4-slim
 
@@ -72,7 +78,7 @@ RUN mkdir /opencv-${OPENCV_VERSION}/cmake_binary \
 
 RUN pip install face_recognition==1.0.0
 
-COPY . /root/game_face
+COPY . /root/sketch_face
 
-CMD cd /root/game_face && \
-    python game_face.py
+CMD cd /root/sketch_face && \
+    python sketch_face.py
