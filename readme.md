@@ -7,9 +7,10 @@ alone, or enjoy hours of fun with the whole family.
 ![Alt Text](https://github.com/goberoi/face_experiments/blob/master/face_experiments.gif)
 
 From gfycat:
-![Alt Text](https://gfycat.com/ifr/SoreDevotedChameleon)
+![Alt Text](https://gfycat.com/gifs/detail/SoreDevotedChameleon)
 
 ## Overview
+
 
 I built this project as a learning excercise to understand how to work with video and images containing faces.
 
