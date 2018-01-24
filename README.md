@@ -18,15 +18,16 @@ Key ingredients include:
 
 ## Installation
 
-The provided Dockerfile makes installation easy:
+The provided Dockerfile makes installation and running easy:
 
 ```
 git clone https://github.com/goberoi/sketch_face.git
 docker build -t goberoi/sketch_face .
-docker -ti run goberoi/sketch_face
+./run.sh
 ```
 
 The above has been tested on Ubuntu 16.04, but not Windows, or Mac. 
+The run.sh bash script calles docker run with several parameters for sharing webcam, display, etc.
 Mac users, warning: [Docker for Mac does not pass through USB devices to containers](https://docs.docker.com/docker-for-mac/faqs/#can-i-pass-through-a-usb-device-to-a-container) so you'll have to find another way (workarounds do exist).
 
 ## Usage
