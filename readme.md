@@ -1,39 +1,37 @@
-# Overview
+# Sketch Face
 
-This is a sandbox repo for various experiments with face detection, recognition, and object detection. 
+Use your webcam to control a cartoon version of your face. Open your
+mouth to hurl cartoon objects in the direction you are facing.  Do it
+alone, or enjoy hours of fun with the whole family.
 
 ![Alt Text](https://github.com/goberoi/face_experiments/blob/master/face_experiments.gif)
 
+From gfycat:
+![Alt Text](https://gfycat.com/ifr/SoreDevotedChameleon)
 
-## Notes
+## Overview
 
-### Related work
+I built this project as a learning excercise to understand how to work with video and images containing faces.
 
-* Video of face generation with sketches: https://www.instagram.com/p/BUU8TuQD6_v/
+Key ingredients include:
+* face_recognition: an excellent (which uses Dlib under the hood), OpenCV, and Google's Quickdraw dataset to produce these results. 
+I also relied on lots of quality advice across the internet (see References).
 
+## Installation
 
-### Helpful
+This works great on Ubuntu, but not on MacOS because 
+[Docker for Mac does not pass through USB devices to containers](https://docs.docker.com/docker-for-mac/faqs/#can-i-pass-through-a-usb-device-to-a-container) (boo!).
+It might work on Windows but has not been tested there.
 
-* Optimizing python and opencv: https://www.pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/
-* Google object detection example: https://towardsdatascience.com/building-a-real-time-object-recognition-app-with-tensorflow-and-opencv-b7a2b4ebdc32
-* Download binaries of tensorflow for Mac; 30-40% speed increase: https://github.com/lakshayg/tensorflow-build
-* face_recognition library's demo code: https://github.com/ageitgey/face_recognition/blob/master/examples/facerec_from_webcam_faster.py
-* head pose estimation: https://www.learnopencv.com/head-pose-estimation-using-opencv-and-dlib/
+```
+git clone git@github.com:goberoi/face_experiments.git
+docker build goberoi/face_experiments .
+docker -ti run goberoi/face_experiments
+```
 
-### Download pretrained models
+## References
 
-MODEL_NAME = 'ssd_mobilenet_v1_coco_2017_11_17'
-MODEL_FILE = MODEL_NAME + '.tar.gz'
-DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
-
-### Path to frozen detection graph. This is the actual model that is used for the object detection.
-
-PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
-
-### List of the strings that is used to add correct label for each box.
-
-PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
-
-http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coco_2017_11_17.tar.gz
-http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coco_2017_11_17/data/mscoco_label_map.pbtxt
-
+* This project was inspired by [this video on Instagram](https://www.instagram.com/p/BUU8TuQD6_v).
+* The face_recognition library is awesome. [Start with this demo code](https://github.com/ageitgey/face_recognition/blob/master/examples/facerec_from_webcam_faster.py).
+* On how to [increase FPS by putting camera reading IO in another thread](https://www.pyimagesearch.com/2015/12/21/increasing-webcam-fps-with-python-and-opencv/).
+* I 'borrowed' [head pose estimation code from here](https://www.learnopencv.com/head-pose-estimation-using-opencv-and-dlib/).
