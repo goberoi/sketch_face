@@ -2,6 +2,9 @@
 
 This is a sandbox repo for various experiments with face detection, recognition, and object detection. 
 
+![Alt Text](https://github.com/goberoi/face_experiments/raw/master/face_experiments.gif)
+
+
 ## Notes
 
 ### Related work
