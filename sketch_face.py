@@ -190,10 +190,13 @@ if __name__ == '__main__':
                 # Sometimes we want to connect the ends of a polygon, other times not
                 close_polygon = False
 
-                x = 0
-                for p in np_points:
-                    cv.circle(canvas, tuple(p), x, (255, 0, 0), -1)
-                    x += 1
+                if landmark in ['nose_tip', 'nose_bridge']:
+                    x = 1
+                    for p in np_points:
+                        cv2.circle(canvas, tuple(p), x, (255, 0, 0), -1)
+                        x += 1
+
+                foo = ['chin', 'left_eyebrow', 'right_eyebrow', 'nose_bridge', 'nose_tip', 'left_eye', 'right_eye', 'top_lip', 'bottom_lip']
 
                 # Draw sketches for eyes and nose, but lines for the others
                 if landmark in ['left_eye', 'right_eye']:
@@ -202,7 +205,8 @@ if __name__ == '__main__':
                     if settings['nosketch']:
                         cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
                     else:
-                        quickdraw.render(canvas, centroid[0], centroid[1], sketch_images[landmark], 0.2)
+                        eye_height = np.linalg.norm(np_points[5] - np_points[1]) * 1.75
+                        quickdraw.render(canvas, centroid[0], centroid[1], sketch_images[landmark], height=eye_height)
                 elif landmark in ['nose_tip']:
                     pass
                 elif landmark in ['nose_bridge']:
