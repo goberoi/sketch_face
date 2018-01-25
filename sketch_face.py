@@ -186,36 +186,22 @@ if __name__ == '__main__':
                 # Turn the points into a numpy array for processing and scale them
                 np_points = np.array(points, dtype='int32')
                 np_points *= settings['scale_frame']
-
-                # Sometimes we want to connect the ends of a polygon, other times not
-                close_polygon = False
-
-                if landmark in ['nose_tip', 'nose_bridge']:
-                    x = 1
-                    for p in np_points:
-                        cv2.circle(canvas, tuple(p), x, (255, 0, 0), -1)
-                        x += 1
-
-                foo = ['chin', 'left_eyebrow', 'right_eyebrow', 'nose_bridge', 'nose_tip', 'left_eye', 'right_eye', 'top_lip', 'bottom_lip']
-
+                
                 # Draw sketches for eyes and nose, but lines for the others
-                if landmark in ['left_eye', 'right_eye']:
-                    close_polygon = True
+                if landmark in ['left_eye', 'right_eye'] and not settings['nosketch']:
                     centroid = np.mean(np_points, axis=0).astype('int')
-                    if settings['nosketch']:
-                        cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
-                    else:
-                        eye_height = np.linalg.norm(np_points[5] - np_points[1]) * 1.75
-                        quickdraw.render(canvas, centroid[0], centroid[1], sketch_images[landmark], height=eye_height)
+                    eye_height = np.linalg.norm(np_points[5] - np_points[1]) * 1.75
+                    quickdraw.render(canvas, centroid[0], centroid[1], sketch_images[landmark], height=eye_height)
                 elif landmark in ['nose_tip']:
                     pass
-                elif landmark in ['nose_bridge']:
-                    if settings['nosketch']:
-                        cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
-                    else:
-                        quickdraw.render(canvas, np_points[3][0], np_points[3][1], sketch_images[landmark], 0.2)
+                elif landmark in ['nose_bridge'] and not settings['nosketch']:
+                    bridge_tip = np_points[3]
+                    nose_tip = np.array(face['nose_tip'][2], dtype='int32') * settings['scale_frame']
+                    nose_height = np.linalg.norm(nose_tip - bridge_tip)
+                    nose_tip[1] = nose_tip[1] - nose_height
+                    quickdraw.render(canvas, nose_tip[0], nose_tip[1], sketch_images[landmark], height=nose_height * 1.5)
                 else:
-                    cv2.polylines(canvas, [np_points], close_polygon, line_color, 3)
+                    cv2.polylines(canvas, [np_points], False, line_color, 3)
 
         logger.debug('worker: done rendering face landmarks %s' % str(time.time() - t))
 
