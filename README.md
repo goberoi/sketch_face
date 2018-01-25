@@ -18,7 +18,7 @@ Key ingredients include:
 
 ## Installation
 
-The provided Dockerfile makes installation and running easy:
+The provided Dockerfile makes installation and running easy (but doesn't work on Mac, read notes below):
 
 ```
 git clone https://github.com/goberoi/sketch_face.git
@@ -27,9 +27,9 @@ docker build -t goberoi/sketch_face .
 ```
 
 Notes:
+* Mac users, warning: [Docker for Mac does not pass through USB devices to containers](https://docs.docker.com/docker-for-mac/faqs/#can-i-pass-through-a-usb-device-to-a-container) so you'll have to find another way (workarounds do exist but they are hairy).
 * The above has been tested on Ubuntu 16.04, but not Windows, or Mac. 
 * The run.sh bash script calles docker run with several parameters for sharing webcam, display, etc.
-* Mac users, warning: [Docker for Mac does not pass through USB devices to containers](https://docs.docker.com/docker-for-mac/faqs/#can-i-pass-through-a-usb-device-to-a-container) so you'll have to find another way (workarounds do exist).
 
 ## Usage
 
@@ -39,7 +39,7 @@ While the program is running, click to give it focus, and then press these keys 
 * 's': render eyes and nose as a cartoon sketch, or not.
 * 'q': quit and cleanup.
 
-Type `python game_face.py` to see command line options for the same as above.
+Type `python sketch_face.py` to see command line options for the same as above.
 
 ## How it Works
 
