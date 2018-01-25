@@ -31,10 +31,13 @@ class Sprite:
         self._image = image
         self._out_of_bounds = False
         self._height = height
+        self._lifespan = 0
 
     def update(self, elapsed):
         self._position[0] += int(self._direction[0] * elapsed)
         self._position[1] += int(self._direction[1] * elapsed)
+        # Add elapsed seconds to lifespan
+        self._lifespan += elapsed
         # Check if it is out of bounds
         if self._position[0] > settings['width'] \
                 or self._position[1] > settings['height'] \
@@ -43,7 +46,8 @@ class Sprite:
             self._out_of_bounds = True
 
     def render(self, canvas):
-        QuickDraw.render(canvas, self._position[0], self._position[1], self._image, height=self._height)
+        height = self._height * (1 + self._lifespan) # Slightly grow the height over time
+        QuickDraw.render(canvas, self._position[0], self._position[1], self._image, height=height)
         pass
 
 
