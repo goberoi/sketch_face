@@ -190,6 +190,11 @@ if __name__ == '__main__':
                 # Sometimes we want to connect the ends of a polygon, other times not
                 close_polygon = False
 
+                x = 0
+                for p in np_points:
+                    cv.circle(canvas, tuple(p), x, (255, 0, 0), -1)
+                    x += 1
+
                 # Draw sketches for eyes and nose, but lines for the others
                 if landmark in ['left_eye', 'right_eye']:
                     close_polygon = True
