@@ -223,14 +223,9 @@ if __name__ == '__main__':
             mouth_top = np.array(face['top_lip'][9]) * settings['scale_frame']
             mouth_bottom = np.array(face['bottom_lip'][9]) * settings['scale_frame']
             upper_lip_top = np.array(face['top_lip'][3]) * settings['scale_frame']
-
-            # Render for debugging
-#            cv2.circle(canvas, tuple(mouth_top), 10, (255,0,0), -1)
-#            cv2.circle(canvas, tuple(mouth_bottom), 5, (0,255,0), -1)
-#            cv2.circle(canvas, tuple(upper_lip_top), 5, (0,0,255), -1)
-
             upper_lip_height = np.linalg.norm(mouth_top - upper_lip_top)
             mouth_opening_height = np.linalg.norm(mouth_bottom - mouth_top)
+
             if mouth_opening_height > 1.75 * upper_lip_height:
                 # Compute head pose, this is the direction the sprite will travel in
                 if settings['showpose']:

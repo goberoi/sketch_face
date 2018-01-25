@@ -40,6 +40,15 @@ class QuickDraw:
         with open(os.path.join(IMAGES_DIR, filename)) as file:
             for line in file:
                 image = json.loads(line)
+                max_x, max_y = (0, 0)
+                min_x, min_y = (999, 999)
+                for stroke in image['drawing']:
+                    max_x = max(max(stroke[0]), max_x)
+                    min_x = min(min(stroke[0]), min_x)
+                    max_y = max(max(stroke[1]), max_y)
+                    min_y = min(min(stroke[1]), min_y)
+                image['width'] = max_x - min_x
+                image['height'] = max_y - min_y
                 images.append(image)
         return images
 
@@ -64,8 +73,8 @@ class QuickDraw:
     def render(cls, canvas, x, y, image, scale=1, height=None, width=None):
         """Render the given image on the given numpy array. Scale down using the scale factor provided."""
 
-        image_width = 256
-        image_height = 180
+        image_width = image['width']
+        image_height = image['height']
 
         if debug:
             cv2.circle(canvas, (int(x), int(y)), 2, (0,0,255))
