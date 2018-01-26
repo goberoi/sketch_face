@@ -16,21 +16,6 @@ Key ingredients include:
 * [OpenCV](https://github.com/opencv/opencv): a vision programmer's best friend for working with images and video.
 * [Google's Quickdraw dataset](https://github.com/googlecreativelab/quickdraw-dataset): the source of images used for the eyes, nose, and mouth-spewed objects.
 
-## Installation
-
-The provided Dockerfile makes installation and running easy (but doesn't work on Mac, read notes below):
-
-```
-git clone https://github.com/goberoi/sketch_face.git
-docker build -t goberoi/sketch_face .
-./run.sh
-```
-
-Notes:
-* Mac users, warning: [Docker for Mac does not pass through USB devices to containers](https://docs.docker.com/docker-for-mac/faqs/#can-i-pass-through-a-usb-device-to-a-container) so you'll have to find another way (workarounds do exist but they are hairy).
-* The above has been tested on Ubuntu 16.04, but not Windows, or Mac. 
-* The run.sh bash script calles docker run with several parameters for sharing webcam, display, etc.
-
 ## Usage
 
 While the program is running, click to give it focus, and then press these keys for functionality:
@@ -49,6 +34,21 @@ In a nutshell:
 3. Find the centers of the eyes and nose, and replace them with random Quickdraw cartoons of eyes and noses. Render the rest as lines.
 4. If the mouth appears to be open (crudely determined by looking at the ratio of height to width), then estimate head pose using the given landmarks, and create random Quickdraw sprites moving in that direction.
 5. Check for key presses and toggle various rendering options as described above.
+
+## Installation
+
+The provided Dockerfile makes installation and running easy (but doesn't work on Mac, read notes below):
+
+```
+git clone https://github.com/goberoi/sketch_face.git
+docker build -t goberoi/sketch_face .
+./run.sh
+```
+
+Notes:
+* Mac users, warning: [Docker for Mac does not pass through USB devices to containers](https://docs.docker.com/docker-for-mac/faqs/#can-i-pass-through-a-usb-device-to-a-container) so you'll have to find another way (workarounds do exist but they are hairy).
+* The above has been tested on Ubuntu 16.04, but not Windows, or Mac. 
+* The run.sh bash script calles docker run with several parameters for sharing webcam, display, etc.
 
 ## References
 
