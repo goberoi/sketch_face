@@ -8,7 +8,6 @@ alone, or enjoy hours of fun with the whole family.
 
 ## Overview
 
-
 I built this project as a learning excercise to understand how to work with video and images containing faces.
 
 Key ingredients include:

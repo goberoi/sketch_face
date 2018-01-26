@@ -42,7 +42,8 @@ class Sprite:
         if self._position[0] > settings['width'] \
                 or self._position[1] > settings['height'] \
                 or self._position[0] < 0 \
-                or self._position[1] < 0:
+                or self._position[1] < 0 \
+                or self._lifespan > 10:
             self._out_of_bounds = True
 
     def render(self, canvas):
