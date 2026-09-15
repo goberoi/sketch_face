@@ -1,3 +1,5 @@
+
+
 # Sketch Face
 
 Use your webcam to control a cartoon version of your face. Open your
@@ -23,7 +25,7 @@ While the program is running, click to give it focus, and then press these keys 
 * 's': render eyes and nose as a cartoon sketch, or not.
 * 'q': quit and cleanup.
 
-Type `python sketch_face.py` to see command line options for the same as above.
+Type `python sketch_face.py --help` to see command line options for the same as above.
 
 ## How it Works
 
